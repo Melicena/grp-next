@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { ThemeToggle } from "@/components/theme-toggle"
 import {
   FileText,
   Code,
@@ -18,6 +19,7 @@ import {
   User,
   Archive,
   Shield,
+  LogOut,
   Search,
   Settings,
   Menu,
@@ -28,6 +30,8 @@ import {
   Upload,
   Trash2
 } from "lucide-react"
+import { DiligenciasPage } from "@/components/diligencias-page"
+import { EncartadosSection } from "@/components/encartados-section"
 
 const navigationItems = [
   { id: "atestados", name: "Atestados", icon: FileText, description: "Gestión de atestados policiales" },
@@ -42,7 +46,6 @@ const navigationItems = [
   { id: "oficios", name: "Oficios", icon: Mail, description: "Oficios y comunicaciones" },
   { id: "personal", name: "Personal", icon: User, description: "Gestión de personal" },
   { id: "repositorio", name: "Repositorio", icon: Archive, description: "Repositorio de documentos" },
-  { id: "encartados", name: "Encartados", icon: UserPlus, description: "Gestión de encartados relacionados" },
 ]
 
 export function PoliceDashboard() {
@@ -52,29 +55,27 @@ export function PoliceDashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-sidebar border-b border-sidebar-border">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
+      <header className="bg-sidebar border-b border-sidebar-border px-4 py-3 md:px-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
             <Button
               variant="ghost"
               size="sm"
               className="md:hidden text-sidebar-foreground hover:bg-sidebar-accent"
               onClick={() => setSidebarOpen(!sidebarOpen)}
             >
-              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </Button>
-            <div className="flex items-center gap-2">
-              <Shield className="h-8 w-8 text-sidebar-accent" />
+            <div className="flex items-center gap-3">
+              <Shield className="h-8 w-8 text-primary" />
               <div>
-                <h1 className="text-xl font-bold text-sidebar-foreground">Sistema Policial</h1>
-                <p className="text-sm text-sidebar-foreground/70">Gestión de Recursos</p>
+                <h1 className="text-xl font-bold text-sidebar-foreground">GPR - Sistema Policial</h1>
+                <p className="text-sm text-sidebar-foreground/70">Gestión y Procedimientos</p>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="text-sidebar-foreground hover:bg-sidebar-accent">
-              <Search className="h-4 w-4" />
-            </Button>
+            <ThemeToggle />
             <Button variant="ghost" size="sm" className="text-sidebar-foreground hover:bg-sidebar-accent">
               <Settings className="h-4 w-4" />
             </Button>
@@ -214,39 +215,14 @@ export function PoliceDashboard() {
                   ))}
                 </div>
               </div>
-              
-              {/* Encartados Section - Moved to the end */}
-              <div className="mt-8">
-                <h3 className="text-xl font-semibold mb-4">Encartados Relacionados</h3>
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">Listado de Encartados</CardTitle>
-                      <Button variant="outline" size="sm">
-                        <UserPlus className="h-4 w-4 mr-2" /> Añadir Encartado
-                      </Button>
-                    </div>
-                    <CardDescription>Denunciantes, denunciados, detenidos, letrados, testigos, etc.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {/* El contenido estará vacío y se mostrarán los encartados en línea */}
-                      <div className="flex justify-center gap-3 mt-4">
-                        <Button variant="outline" size="sm">
-                          <Save className="h-4 w-4 mr-2" /> Guardar
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Upload className="h-4 w-4 mr-2" /> Cargar
-                        </Button>
-                        <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10">
-                          <Trash2 className="h-4 w-4 mr-2" /> Borrar
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+            
+              {/* Encartados Section - Now using the reusable component */}
+              <EncartadosSection />
+            
+            
             </div>
+          ) : activeSection === "diligencias" ? (
+            <DiligenciasPage />
           ) : (
             <div className="space-y-6">
               <div>
