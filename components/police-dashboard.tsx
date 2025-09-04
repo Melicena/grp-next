@@ -22,6 +22,11 @@ import {
   Settings,
   Menu,
   X,
+  UserPlus,
+  Plus,
+  Save,
+  Upload,
+  Trash2
 } from "lucide-react"
 
 const navigationItems = [
@@ -37,6 +42,7 @@ const navigationItems = [
   { id: "oficios", name: "Oficios", icon: Mail, description: "Oficios y comunicaciones" },
   { id: "personal", name: "Personal", icon: User, description: "Gestión de personal" },
   { id: "repositorio", name: "Repositorio", icon: Archive, description: "Repositorio de documentos" },
+  { id: "encartados", name: "Encartados", icon: UserPlus, description: "Gestión de encartados relacionados" },
 ]
 
 export function PoliceDashboard() {
@@ -71,6 +77,9 @@ export function PoliceDashboard() {
             </Button>
             <Button variant="ghost" size="sm" className="text-sidebar-foreground hover:bg-sidebar-accent">
               <Settings className="h-4 w-4" />
+            </Button>
+            <Button variant="secondary" size="sm" className="text-sidebar-foreground hover:bg-sidebar-accent">
+              <Plus className="h-4 w-4 mr-1" /> AÑADIR
             </Button>
           </div>
         </div>
@@ -178,6 +187,8 @@ export function PoliceDashboard() {
                 </Card>
               </div>
 
+
+
               {/* Quick Access Grid */}
               <div>
                 <h3 className="text-xl font-semibold mb-4">Acceso Rápido</h3>
@@ -202,6 +213,38 @@ export function PoliceDashboard() {
                     </Card>
                   ))}
                 </div>
+              </div>
+              
+              {/* Encartados Section - Moved to the end */}
+              <div className="mt-8">
+                <h3 className="text-xl font-semibold mb-4">Encartados Relacionados</h3>
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">Listado de Encartados</CardTitle>
+                      <Button variant="outline" size="sm">
+                        <UserPlus className="h-4 w-4 mr-2" /> Añadir Encartado
+                      </Button>
+                    </div>
+                    <CardDescription>Denunciantes, denunciados, detenidos, letrados, testigos, etc.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {/* El contenido estará vacío y se mostrarán los encartados en línea */}
+                      <div className="flex justify-center gap-3 mt-4">
+                        <Button variant="outline" size="sm">
+                          <Save className="h-4 w-4 mr-2" /> Guardar
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Upload className="h-4 w-4 mr-2" /> Cargar
+                        </Button>
+                        <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10">
+                          <Trash2 className="h-4 w-4 mr-2" /> Borrar
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           ) : (
