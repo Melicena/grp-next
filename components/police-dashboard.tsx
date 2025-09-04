@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -32,6 +33,7 @@ import {
 } from "lucide-react"
 import { DiligenciasPage } from "@/components/diligencias-page"
 import { EncartadosSection } from "@/components/encartados-section"
+import ConfiguracionPage from "@/components/configuracion-page"
 
 const navigationItems = [
   { id: "atestados", name: "Atestados", icon: FileText, description: "Gestión de atestados policiales" },
@@ -51,6 +53,7 @@ const navigationItems = [
 export function PoliceDashboard() {
   const [activeSection, setActiveSection] = useState("dashboard")
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const router = useRouter()
 
   return (
     <div className="min-h-screen bg-background">
@@ -76,7 +79,15 @@ export function PoliceDashboard() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button variant="ghost" size="sm" className="text-sidebar-foreground hover:bg-sidebar-accent">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-sidebar-foreground hover:bg-sidebar-accent"
+              onClick={() => {
+                router.push('/configuracion')
+                setSidebarOpen(false)
+              }}
+            >
               <Settings className="h-4 w-4" />
             </Button>
             <Button variant="secondary" size="sm" className="text-sidebar-foreground hover:bg-sidebar-accent">
@@ -123,6 +134,18 @@ export function PoliceDashboard() {
                   {item.name}
                 </Button>
               ))}
+              
+              <Button
+                variant={activeSection === "configuracion" ? "secondary" : "ghost"}
+                className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent"
+                onClick={() => {
+                  setActiveSection("configuracion")
+                  setSidebarOpen(false)
+                }}
+              >
+                <Settings className="h-4 w-4 mr-3" />
+                Configuración
+              </Button>
             </nav>
           </div>
         </aside>
@@ -223,6 +246,8 @@ export function PoliceDashboard() {
             </div>
           ) : activeSection === "diligencias" ? (
             <DiligenciasPage />
+          ) : activeSection === "configuracion" ? (
+            <ConfiguracionPage />
           ) : (
             <div className="space-y-6">
               <div>

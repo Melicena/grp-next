@@ -21,6 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
   const router = useRouter()
   const pathname = usePathname()
 
@@ -38,8 +39,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null)
       setLoading(false)
       
-      // Manejar redirecciones basadas en el estado de autenticación
-      handleRedirection(session, pathname)
+      // Solo manejar redirecciones en carga inicial si es necesario
+      if (isInitialLoad) {
+        handleInitialRedirection(session, pathname)
+        setIsInitialLoad(false)
+      }
     })
 
     // Escuchar cambios de autenticación
@@ -58,26 +62,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null)
       setLoading(false)
       
-      // Manejar redirecciones en cambios de estado
-      handleRedirection(session, pathname)
+      // Solo redirigir en cambios de estado de auth, no en refresh
+      if (!isInitialLoad) {
+        handleAuthStateChange(session, pathname, event)
+      }
     })
 
     return () => subscription.unsubscribe()
-  }, [router, pathname])
+  }, [router]) // Remover 'pathname' de las dependencias
 
-  const handleRedirection = (session: Session | null, currentPath: string) => {
-    // Si no hay sesión y no estamos en login, redirigir a login
+  const handleInitialRedirection = (session: Session | null, currentPath: string) => {
+    // Solo redirigir si no hay sesión y no estamos en login
     if (!session && currentPath !== '/login') {
-      console.log('🔴 Redirigiendo a /login - No hay sesión')
+      console.log('🔴 Redirigiendo a /login - No hay sesión en carga inicial')
       router.push('/login')
-      return
     }
-    
-    // Si hay sesión y estamos en login, redirigir a home
-    if (session && currentPath === '/login') {
-      console.log('🟢 Redirigiendo a / - Sesión activa')
+  }
+
+  const handleAuthStateChange = (session: Session | null, currentPath: string, event: string) => {
+    // Redirigir solo en eventos específicos
+    if (event === 'SIGNED_OUT' && currentPath !== '/login') {
+      console.log('🔴 Redirigiendo a /login - Usuario deslogueado')
+      router.push('/login')
+    } else if (event === 'SIGNED_IN' && currentPath === '/login') {
+      console.log('🟢 Redirigiendo a / - Usuario logueado desde login')
       router.push('/')
-      return
     }
   }
 
