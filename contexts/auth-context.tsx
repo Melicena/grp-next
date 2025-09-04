@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 
 interface AuthContextType {
   user: User | null
@@ -22,32 +22,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     // Obtener sesión inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('🟡 AUTH CONTEXT: Sesión inicial:', {
+        hasSession: !!session,
+        userId: session?.user?.id,
+        email: session?.user?.email,
+        currentPath: pathname
+      })
+      
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
+      
+      // Manejar redirecciones basadas en el estado de autenticación
+      handleRedirection(session, pathname)
     })
 
     // Escuchar cambios de autenticación
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🟡 AUTH CONTEXT: Evento de autenticación:', {
+        event,
+        hasSession: !!session,
+        userId: session?.user?.id,
+        email: session?.user?.email,
+        currentPath: pathname
+      })
+      
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
-
-      if (event === 'SIGNED_IN') {
-        router.push('/')
-      } else if (event === 'SIGNED_OUT') {
-        router.push('/login')
-      }
+      
+      // Manejar redirecciones en cambios de estado
+      handleRedirection(session, pathname)
     })
 
     return () => subscription.unsubscribe()
-  }, [router])
+  }, [router, pathname])
+
+  const handleRedirection = (session: Session | null, currentPath: string) => {
+    // Si no hay sesión y no estamos en login, redirigir a login
+    if (!session && currentPath !== '/login') {
+      console.log('🔴 Redirigiendo a /login - No hay sesión')
+      router.push('/login')
+      return
+    }
+    
+    // Si hay sesión y estamos en login, redirigir a home
+    if (session && currentPath === '/login') {
+      console.log('🟢 Redirigiendo a / - Sesión activa')
+      router.push('/')
+      return
+    }
+  }
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({

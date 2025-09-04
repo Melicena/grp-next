@@ -1,14 +1,14 @@
-import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import { ThemeProvider } from '@/components/theme-provider'
+import './globals.css'
 import { AuthProvider } from '@/contexts/auth-context'
-import { Toaster } from '@/components/ui/toaster'
+import { AuthWrapper } from '@/components/auth-wrapper'
+import { ThemeProvider } from '@/components/theme-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Sistema Policial GPR',
+  title: 'GPR Next',
   description: 'Sistema de gestión policial',
 }
 
@@ -27,8 +27,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            {children}
-            <Toaster />
+            <AuthWrapper>
+              {children}
+            </AuthWrapper>
           </AuthProvider>
         </ThemeProvider>
       </body>
