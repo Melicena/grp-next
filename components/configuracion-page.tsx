@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { supabase } from "@/lib/supabase"
-import { Save, Settings } from "lucide-react"
+import { Save, Settings, ArrowLeft } from "lucide-react"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 interface ConfiguracionData {
   tip: string
@@ -30,6 +31,7 @@ export default function ConfiguracionPage() {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
+  const router = useRouter()
   const [configuracion, setConfiguracion] = useState<ConfiguracionData>({
     tip: "",
     comandancia: "",
@@ -151,6 +153,10 @@ export default function ConfiguracionPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleVolver = () => {
+    router.back()
   }
 
     if (loading) {
@@ -332,7 +338,15 @@ export default function ConfiguracionPage() {
               />
             </div>
   
-            <div className="flex justify-end pt-4">
+            <div className="flex justify-between pt-4">
+              <Button 
+                onClick={handleVolver}
+                variant="outline"
+                className="min-w-[120px]"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Volver
+              </Button>
               <Button 
                 onClick={guardarConfiguracion}
                 disabled={saving}
