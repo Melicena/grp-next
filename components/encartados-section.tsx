@@ -37,6 +37,7 @@ interface FormData {
   persona_telefono: string
   relacion: string
   // Campos para Letrados
+  letrado_tipo: string
   letrado_nombre: string
   letrado_numero: string
   letrado_telefono: string
@@ -65,6 +66,7 @@ interface Entidad {
   telefono?: string
   relacion?: string
   // Campos para Letrados
+  letrado_tipo?: string
   nombre?: string
   numero?: string
   telefono?: string
@@ -258,7 +260,7 @@ export function EncartadosSection({
     } else if (activeTab === 'personas') {
       isValid = formData.persona_nombre.trim() && formData.apellido1.trim() && formData.documento.trim()
     } else if (activeTab === 'letrados') {
-      isValid = formData.letrado_nombre.trim() && formData.letrado_numero.trim()
+      isValid = formData.letrado_tipo.trim() && formData.letrado_nombre.trim() && formData.letrado_numero.trim()
     }
     
     if (!isValid) {
@@ -367,6 +369,7 @@ export function EncartadosSection({
           const { error } = await supabase
             .from('entidades_letrados')
             .update({
+              letrado_tipo: formData.letrado_tipo.trim(),
               nombre: formData.letrado_nombre.trim(),
               numero: formData.letrado_numero.trim(),
               telefono: formData.letrado_telefono.trim() || null,
@@ -387,6 +390,7 @@ export function EncartadosSection({
           const { error } = await supabase
             .from('entidades_letrados')
             .insert({
+              letrado_tipo: formData.letrado_tipo.trim(),
               nombre: formData.letrado_nombre.trim(),
               numero: formData.letrado_numero.trim(),
               telefono: formData.letrado_telefono.trim() || null,
@@ -488,6 +492,7 @@ export function EncartadosSection({
         persona_telefono: '',
         relacion: '',
         // Letrados - solo llenar campos de letrado
+        letrado_tipo: entidad.letrado_tipo || '',
         letrado_nombre: entidad.nombre || '',
         letrado_numero: entidad.numero || '',
         letrado_telefono: entidad.telefono || '',
@@ -616,6 +621,7 @@ export function EncartadosSection({
       persona_telefono: '',
       relacion: '',
       // Letrados
+      letrado_tipo: '',
       letrado_nombre: '',
       letrado_numero: '',
       letrado_telefono: '',
@@ -1076,6 +1082,23 @@ export function EncartadosSection({
             {/* Campos para Letrados */}
             {activeTab === 'letrados' && (
               <>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="letrado_tipo" className="text-right">
+                    Letrado *
+                  </Label>
+                  <Select
+                    value={formData.letrado_tipo}
+                    onValueChange={(value) => handleInputChange('letrado_tipo', value)}
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Seleccionar tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Victima">Víctima</SelectItem>
+                      <SelectItem value="Autor">Autor</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="nombre" className="text-right">
                     Nombre *
