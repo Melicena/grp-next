@@ -37,11 +37,10 @@ interface FormData {
   telefono: string
   relacion: string
   // Campos para Letrados
-  nombreLetrado: string
-  apellidosLetrado: string
-  colegio: string
-  numeroColegial: string
-  telefonoLetrado: string
+  nombre: string
+  numero: string
+  telefono: string
+  atestado: string
 }
 
 interface Entidad {
@@ -66,11 +65,11 @@ interface Entidad {
   telefono?: string
   relacion?: string
   // Campos para Letrados
-  nombreLetrado?: string
-  apellidosLetrado?: string
-  colegio?: string
-  numeroColegial?: string
-  telefonoLetrado?: string
+  nombreLetradoNuevo?: string
+  numeroLetrado?: string
+  telefonoLetradoNuevo?: string
+  usuarioLetrado?: string
+  atestadoLetrado?: string
 }
 
 interface UserData {
@@ -111,11 +110,10 @@ export function EncartadosSection({
     telefono: '',
     relacion: '',
     // Letrados
-    nombreLetrado: '',
-    apellidosLetrado: '',
-    colegio: '',
-    numeroColegial: '',
-    telefonoLetrado: ''
+    nombre: '',
+    numero: '',
+    telefono: '',
+    atestado: ''
   })
 
   useEffect(() => {
@@ -258,7 +256,7 @@ export function EncartadosSection({
     } else if (activeTab === 'personas') {
       isValid = formData.nombre.trim() && formData.apellido1.trim() && formData.documento.trim()
     } else if (activeTab === 'letrados') {
-      isValid = formData.nombreLetrado.trim() && formData.apellidosLetrado.trim() && formData.colegio.trim()
+      isValid = formData.nombre.trim() && formData.numero.trim()
     }
     
     if (!isValid) {
@@ -367,11 +365,10 @@ export function EncartadosSection({
           const { error } = await supabase
             .from('entidades_letrados')
             .update({
-              nombreLetrado: formData.nombreLetrado.trim(),
-              apellidosLetrado: formData.apellidosLetrado.trim(),
-              colegio: formData.colegio.trim(),
-              numeroColegial: formData.numeroColegial.trim() || null,
-              telefonoLetrado: formData.telefonoLetrado.trim() || null
+              nombreLetradoNuevo: formData.nombre.trim(),
+              numeroLetrado: formData.numero.trim(),
+              telefonoLetradoNuevo: formData.telefono.trim() || null,
+              atestadoLetrado: formData.atestado.trim() || null
             })
             .eq('id', editingEntidad.id)
             .eq('usuario', user.id) // Seguridad adicional
@@ -388,11 +385,10 @@ export function EncartadosSection({
           const { error } = await supabase
             .from('entidades_letrados')
             .insert({
-              nombreLetrado: formData.nombreLetrado.trim(),
-              apellidosLetrado: formData.apellidosLetrado.trim(),
-              colegio: formData.colegio.trim(),
-              numeroColegial: formData.numeroColegial.trim() || null,
-              telefonoLetrado: formData.telefonoLetrado.trim() || null,
+              nombreLetradoNuevo: formData.nombre.trim(),
+              numeroLetrado: formData.numero.trim(),
+              telefonoLetradoNuevo: formData.telefono.trim() || null,
+              atestadoLetrado: formData.atestado.trim() || null,
               usuario: user.id
             })
 
@@ -441,11 +437,10 @@ export function EncartadosSection({
         telefono: '',
         relacion: '',
         // Letrados
-        nombreLetrado: '',
-        apellidosLetrado: '',
-        colegio: '',
-        numeroColegial: '',
-        telefonoLetrado: ''
+        nombre: '',
+        numero: '',
+        telefono: '',
+        atestado: ''
       })
     } else if (entidad.tipo === 'persona') {
       setActiveTab('personas')
@@ -466,11 +461,10 @@ export function EncartadosSection({
         telefono: entidad.telefono || '',
         relacion: entidad.relacion || '',
         // Letrados
-        nombreLetrado: '',
-        apellidosLetrado: '',
-        colegio: '',
-        numeroColegial: '',
-        telefonoLetrado: ''
+        nombre: '',
+        numero: '',
+        telefono: '',
+        atestado: ''
       })
     } else if (entidad.tipo === 'letrado') {
       setActiveTab('letrados')
@@ -490,11 +484,10 @@ export function EncartadosSection({
         telefono: '',
         relacion: '',
         // Letrados
-        nombreLetrado: entidad.nombreLetrado || '',
-        apellidosLetrado: entidad.apellidosLetrado || '',
-        colegio: entidad.colegio || '',
-        numeroColegial: entidad.numeroColegial || '',
-        telefonoLetrado: entidad.telefonoLetrado || ''
+        nombre: entidad.nombreLetradoNuevo || '',
+        numero: entidad.numeroLetrado || '',
+        telefono: entidad.telefonoLetradoNuevo || '',
+        atestado: entidad.atestadoLetrado || ''
       })
     }
     
@@ -619,11 +612,10 @@ export function EncartadosSection({
       telefono: '',
       relacion: '',
       // Letrados
-      nombreLetrado: '',
-      apellidosLetrado: '',
-      colegio: '',
-      numeroColegial: '',
-      telefonoLetrado: ''
+      nombre: '',
+      numero: '',
+      telefono: '',
+      atestado: ''
     })
     setEditingEntidad(null)
   }
@@ -745,20 +737,16 @@ export function EncartadosSection({
                               Letrado
                             </span>
                             <div className="font-medium">
-                              {entidad.nombreLetrado} {entidad.apellidosLetrado}
+                              {entidad.nombreLetradoNuevo} {entidad.numeroLetrado}
                             </div>
                           </div>
                           <div className="text-sm text-muted-foreground mt-1">
-                            <span className="font-medium">Colegio:</span> {entidad.colegio}
+                            <span className="font-medium">Teléfono:</span> {entidad.telefonoLetradoNuevo}
                           </div>
-                          {entidad.numeroColegial && (
+
+                          {entidad.atestadoLetrado && (
                             <div className="text-sm text-muted-foreground">
-                              <span className="font-medium">Nº Colegial:</span> {entidad.numeroColegial}
-                            </div>
-                          )}
-                          {entidad.telefonoLetrado && (
-                            <div className="text-sm text-muted-foreground">
-                              <span className="font-medium">Teléfono:</span> {entidad.telefonoLetrado}
+                              <span className="font-medium">Atestado:</span> {entidad.atestadoLetrado}
                             </div>
                           )}
                         </>
@@ -993,64 +981,60 @@ export function EncartadosSection({
             {activeTab === 'letrados' && (
               <>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="nombreLetrado" className="text-right">
+                  <Label htmlFor="nombre" className="text-right">
                     Nombre *
                   </Label>
                   <Input
-                    id="nombreLetrado"
-                    value={formData.nombreLetrado}
-                    onChange={(e) => handleInputChange('nombreLetrado', e.target.value)}
+                    id="nombre"
+                    value={formData.nombre}
+                    onChange={(e) => handleInputChange('nombre', e.target.value)}
                     className="col-span-3"
-                    placeholder="Ej: María"
+                    placeholder="Ej: Juan García"
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="apellidosLetrado" className="text-right">
-                    Apellidos *
-                  </Label>
+                   <Label htmlFor="numero" className="text-right">
+                     Nº Colegiado *
+                   </Label>
                   <Input
-                    id="apellidosLetrado"
-                    value={formData.apellidosLetrado}
-                    onChange={(e) => handleInputChange('apellidosLetrado', e.target.value)}
-                    className="col-span-3"
-                    placeholder="Ej: Rodríguez Martín"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="colegio" className="text-right">
-                    Colegio *
-                  </Label>
-                  <Input
-                    id="colegio"
-                    value={formData.colegio}
-                    onChange={(e) => handleInputChange('colegio', e.target.value)}
-                    className="col-span-3"
-                    placeholder="Ej: Colegio de Abogados de Madrid"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="numeroColegial" className="text-right">
-                    Nº Colegial
-                  </Label>
-                  <Input
-                    id="numeroColegial"
-                    value={formData.numeroColegial}
-                    onChange={(e) => handleInputChange('numeroColegial', e.target.value)}
+                    id="numero"
+                    value={formData.numero}
+                    onChange={(e) => handleInputChange('numero', e.target.value)}
                     className="col-span-3"
                     placeholder="Ej: 12345"
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="telefonoLetrado" className="text-right">
+                  <Label htmlFor="telefono" className="text-right">
                     Teléfono
                   </Label>
                   <Input
-                    id="telefonoLetrado"
-                    value={formData.telefonoLetrado}
-                    onChange={(e) => handleInputChange('telefonoLetrado', e.target.value)}
+                    id="telefono"
+                    value={formData.telefono}
+                    onChange={(e) => handleInputChange('telefono', e.target.value)}
                     className="col-span-3"
-                    placeholder="Ej: 91 123 45 67"
+                    placeholder="Ej: 666 123 456"
                   />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="atestado" className="text-right">
+                    Atestado
+                  </Label>
+                  <Select
+                    value={formData.atestado}
+                    onValueChange={(value) => handleInputChange('atestado', value)}
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Seleccionar atestado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {atestadosDisponibles.map((atestado) => (
+                        <SelectItem key={atestado.id} value={atestado.numero}>
+                          {atestado.numero}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </>
             )}
@@ -1106,7 +1090,7 @@ export function EncartadosSection({
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará permanentemente {deletingEntidad?.tipo === 'atestado' ? `el atestado "${deletingEntidad?.numero}"` : deletingEntidad?.tipo === 'persona' ? `la persona "${deletingEntidad?.nombre} ${deletingEntidad?.apellido1}"` : deletingEntidad?.tipo === 'letrado' ? `el letrado "${deletingEntidad?.nombreLetrado} ${deletingEntidad?.apellidosLetrado}"` : 'esta entidad'}.
+              Esta acción no se puede deshacer. Se eliminará permanentemente {deletingEntidad?.tipo === 'atestado' ? `el atestado "${deletingEntidad?.numero}"` : deletingEntidad?.tipo === 'persona' ? `la persona "${deletingEntidad?.nombre} ${deletingEntidad?.apellido1}"` : deletingEntidad?.tipo === 'letrado' ? `el letrado "${deletingEntidad?.nombreLetradoNuevo} ${deletingEntidad?.numeroLetrado}"` : 'esta entidad'}.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
