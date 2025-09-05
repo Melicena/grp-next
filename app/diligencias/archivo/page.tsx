@@ -76,6 +76,7 @@ export default function ArchivoPage() {
       setAtestado(`${currentYear}-${userData.codigo_unidad}-`)
     }
   }, [userData])
+  
   useEffect(() => {
     setFecha(formatSpanishDate())
     obtenerUsuarioActual()
@@ -218,7 +219,7 @@ export default function ArchivoPage() {
         </div>
 
         {/* Formulario */}
-        <Card className="max-w-4xl">
+        <Card className="w-full">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -289,9 +290,11 @@ export default function ArchivoPage() {
                   id="texto"
                   name="texto_diligencia"
                   value={texto}
-                  onChange={(e) => setTexto(e.target.value)}
-                  className="min-h-[400px] font-mono text-sm leading-relaxed border-2 border-gray-300 bg-white focus:border-blue-500 focus:bg-blue-50 dark:border-gray-600 dark:bg-gray-800 dark:focus:border-blue-400 dark:focus:bg-gray-700"
+                  onChange={handleTextoChange}
+                  className="min-h-[100px] font-mono text-sm leading-relaxed border-2 border-gray-300 bg-white focus:border-blue-500 focus:bg-blue-50 dark:border-gray-600 dark:bg-gray-800 dark:focus:border-blue-400 dark:focus:bg-gray-700 resize-none overflow-hidden"
                   placeholder="Texto de la diligencia..."
+                  spellCheck={false}
+                  onInput={(e) => adjustTextareaHeight(e.target as HTMLTextAreaElement)}
                 />
               </div>
 
@@ -378,6 +381,17 @@ export default function ArchivoPage() {
       </Dialog>
     </SharedLayout>
   )
+}
+
+// Función para ajustar automáticamente la altura del textarea
+const adjustTextareaHeight = (element: HTMLTextAreaElement) => {
+element.style.height = 'auto'
+element.style.height = element.scrollHeight + 'px'
+}
+
+const handleTextoChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+setTexto(e.target.value)
+adjustTextareaHeight(e.target)
 }
 
 
