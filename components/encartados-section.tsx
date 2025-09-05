@@ -45,11 +45,30 @@ interface FormData {
 
 interface Entidad {
   id: number
-  numero: string
-  delito: string
-  juzgado: string
+  // Campos comunes
   created_at: string
   usuario: string
+  tipo: 'atestado' | 'persona' | 'letrado'
+  // Campos para Atestados
+  numero?: string
+  delito?: string
+  juzgado?: string
+  // Campos para Personas
+  nombre?: string
+  apellido1?: string
+  apellido2?: string
+  documento?: string
+  fecha_nacimiento?: string
+  nacimiento_lugar?: string
+  direccion?: string
+  telefono?: string
+  relacion?: string
+  // Campos para Letrados
+  nombreLetrado?: string
+  apellidosLetrado?: string
+  colegio?: string
+  numeroColegial?: string
+  telefonoLetrado?: string
 }
 
 interface UserData {
@@ -129,19 +148,67 @@ export function EncartadosSection({
 
     setIsLoadingEntidades(true)
     try {
-      const { data, error } = await supabase
-        .from('entidades_dgs')
-        .select('*')
-        .eq('usuario', user.id)
-        .order('created_at', { ascending: false })
+      // Cargar datos de las tres tablas en paralelo
+      const [atestadosResult, personasResult, letradosResult] = await Promise.all([
+        supabase
+          .from('entidades_dgs')
+          .select('*')
+          .eq('usuario', user.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('entidades_personas')
+          .select('*')
+          .eq('usuario', user.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('entidades_letrados')
+          .select('*')
+          .eq('usuario', user.id)
+          .order('created_at', { ascending: false })
+      ])
 
-      if (error) {
-        console.error('Error al cargar entidades:', error)
-        toast.error('Error al cargar las entidades')
+      // Verificar errores
+      if (atestadosResult.error) {
+        console.error('Error al cargar atestados:', atestadosResult.error)
+        toast.error('Error al cargar los atestados')
+        return
+      }
+      if (personasResult.error) {
+        console.error('Error al cargar personas:', personasResult.error)
+        toast.error('Error al cargar las personas')
+        return
+      }
+      if (letradosResult.error) {
+        console.error('Error al cargar letrados:', letradosResult.error)
+        toast.error('Error al cargar los letrados')
         return
       }
 
-      setEntidades(data || [])
+      // Combinar y formatear los datos
+      const entidadesCombinadas: Entidad[] = [
+        // Atestados
+        ...(atestadosResult.data || []).map(item => ({
+          ...item,
+          tipo: 'atestado' as const
+        })),
+        // Personas
+        ...(personasResult.data || []).map(item => ({
+          ...item,
+          tipo: 'persona' as const
+        })),
+        // Letrados
+        ...(letradosResult.data || []).map(item => ({
+          ...item,
+          tipo: 'letrado' as const
+        }))
+      ]
+
+      // Ordenar por fecha de creación (más recientes primero)
+      entidadesCombinadas.sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )
+
+      setEntidades(entidadesCombinadas)
     } catch (error) {
       console.error('Error inesperado:', error)
       toast.error('Error inesperado al cargar entidades')
@@ -182,29 +249,56 @@ export function EncartadosSection({
 
     try {
       if (activeTab === 'personas') {
-        // Guardar en tabla entidades_personas
-        const { error } = await supabase
-          .from('entidades_personas')
-          .insert({
-            nombre: formData.nombre.trim(),
-            apellido1: formData.apellido1.trim(),
-            apellido2: formData.apellido2.trim(),
-            documento: formData.documento.trim(),
-            fecha_nacimiento: formData.fecha_nacimiento || null,
-            nacimiento_lugar: formData.nacimiento_lugar.trim() || null,
-            direccion: formData.direccion.trim() || null,
-            telefono: formData.telefono.trim() || null,
-            relacion: formData.relacion || null,
-            usuario: user.id
-          })
+        if (editingEntidad) {
+          // Actualizar persona existente
+          const { error } = await supabase
+            .from('entidades_personas')
+            .update({
+              nombre: formData.nombre.trim(),
+              apellido1: formData.apellido1.trim(),
+              apellido2: formData.apellido2.trim(),
+              documento: formData.documento.trim(),
+              fecha_nacimiento: formData.fecha_nacimiento || null,
+              nacimiento_lugar: formData.nacimiento_lugar.trim() || null,
+              direccion: formData.direccion.trim() || null,
+              telefono: formData.telefono.trim() || null,
+              relacion: formData.relacion || null
+            })
+            .eq('id', editingEntidad.id)
+            .eq('usuario', user.id) // Seguridad adicional
 
-        if (error) {
-          console.error('Error al guardar persona:', error)
-          toast.error('Error al guardar los datos de la persona')
-          return
+          if (error) {
+            console.error('Error al actualizar persona:', error)
+            toast.error('Error al actualizar la persona')
+            return
+          }
+
+          toast.success('Persona actualizada correctamente')
+        } else {
+          // Crear nueva persona
+          const { error } = await supabase
+            .from('entidades_personas')
+            .insert({
+              nombre: formData.nombre.trim(),
+              apellido1: formData.apellido1.trim(),
+              apellido2: formData.apellido2.trim(),
+              documento: formData.documento.trim(),
+              fecha_nacimiento: formData.fecha_nacimiento || null,
+              nacimiento_lugar: formData.nacimiento_lugar.trim() || null,
+              direccion: formData.direccion.trim() || null,
+              telefono: formData.telefono.trim() || null,
+              relacion: formData.relacion || null,
+              usuario: user.id
+            })
+
+          if (error) {
+            console.error('Error al guardar persona:', error)
+            toast.error('Error al guardar los datos de la persona')
+            return
+          }
+
+          toast.success('Persona guardada correctamente')
         }
-
-        toast.success('Persona guardada correctamente')
       } else if (activeTab === 'atestados') {
         if (editingEntidad) {
           // Actualizar entidad existente
@@ -245,9 +339,48 @@ export function EncartadosSection({
           toast.success('Entidad guardada correctamente')
         }
       } else if (activeTab === 'letrados') {
-        // TODO: Implementar guardado en tabla entidades_letrados
-        toast.info('Funcionalidad de letrados pendiente de implementar')
-        return
+        if (editingEntidad) {
+          // Actualizar letrado existente
+          const { error } = await supabase
+            .from('entidades_letrados')
+            .update({
+              nombreLetrado: formData.nombreLetrado.trim(),
+              apellidosLetrado: formData.apellidosLetrado.trim(),
+              colegio: formData.colegio.trim(),
+              numeroColegial: formData.numeroColegial.trim() || null,
+              telefonoLetrado: formData.telefonoLetrado.trim() || null
+            })
+            .eq('id', editingEntidad.id)
+            .eq('usuario', user.id) // Seguridad adicional
+
+          if (error) {
+            console.error('Error al actualizar letrado:', error)
+            toast.error('Error al actualizar el letrado')
+            return
+          }
+
+          toast.success('Letrado actualizado correctamente')
+        } else {
+          // Crear nuevo letrado
+          const { error } = await supabase
+            .from('entidades_letrados')
+            .insert({
+              nombreLetrado: formData.nombreLetrado.trim(),
+              apellidosLetrado: formData.apellidosLetrado.trim(),
+              colegio: formData.colegio.trim(),
+              numeroColegial: formData.numeroColegial.trim() || null,
+              telefonoLetrado: formData.telefonoLetrado.trim() || null,
+              usuario: user.id
+            })
+
+          if (error) {
+            console.error('Error al guardar letrado:', error)
+            toast.error('Error al guardar los datos del letrado')
+            return
+          }
+
+          toast.success('Letrado guardado correctamente')
+        }
       }
 
       setIsModalOpen(false)
@@ -265,11 +398,82 @@ export function EncartadosSection({
 
   const handleEdit = (entidad: Entidad) => {
     setEditingEntidad(entidad)
-    setFormData({
-      numero: entidad.numero,
-      delito: entidad.delito,
-      juzgado: entidad.juzgado
-    })
+    
+    // Establecer la pestaña activa según el tipo de entidad
+    if (entidad.tipo === 'atestado') {
+      setActiveTab('atestados')
+      setFormData({
+        // Atestados
+        numero: entidad.numero || '',
+        delito: entidad.delito || '',
+        juzgado: entidad.juzgado || '',
+        // Personas
+        nombre: '',
+        apellido1: '',
+        apellido2: '',
+        documento: '',
+        fecha_nacimiento: '',
+        nacimiento_lugar: '',
+        direccion: '',
+        telefono: '',
+        relacion: '',
+        // Letrados
+        nombreLetrado: '',
+        apellidosLetrado: '',
+        colegio: '',
+        numeroColegial: '',
+        telefonoLetrado: ''
+      })
+    } else if (entidad.tipo === 'persona') {
+      setActiveTab('personas')
+      setFormData({
+        // Atestados
+        numero: '',
+        delito: '',
+        juzgado: '',
+        // Personas
+        nombre: entidad.nombre || '',
+        apellido1: entidad.apellido1 || '',
+        apellido2: entidad.apellido2 || '',
+        documento: entidad.documento || '',
+        fecha_nacimiento: entidad.fecha_nacimiento || '',
+        nacimiento_lugar: entidad.nacimiento_lugar || '',
+        direccion: entidad.direccion || '',
+        telefono: entidad.telefono || '',
+        relacion: entidad.relacion || '',
+        // Letrados
+        nombreLetrado: '',
+        apellidosLetrado: '',
+        colegio: '',
+        numeroColegial: '',
+        telefonoLetrado: ''
+      })
+    } else if (entidad.tipo === 'letrado') {
+      setActiveTab('letrados')
+      setFormData({
+        // Atestados
+        numero: '',
+        delito: '',
+        juzgado: '',
+        // Personas
+        nombre: '',
+        apellido1: '',
+        apellido2: '',
+        documento: '',
+        fecha_nacimiento: '',
+        nacimiento_lugar: '',
+        direccion: '',
+        telefono: '',
+        relacion: '',
+        // Letrados
+        nombreLetrado: entidad.nombreLetrado || '',
+        apellidosLetrado: entidad.apellidosLetrado || '',
+        colegio: entidad.colegio || '',
+        numeroColegial: entidad.numeroColegial || '',
+        telefonoLetrado: entidad.telefonoLetrado || ''
+      })
+    }
+    
     setIsModalOpen(true)
   }
 
@@ -277,8 +481,17 @@ export function EncartadosSection({
     if (!deletingEntidad || !user) return
 
     try {
+      let tableName = ''
+      if (deletingEntidad.tipo === 'atestado') {
+        tableName = 'entidades_dgs'
+      } else if (deletingEntidad.tipo === 'persona') {
+        tableName = 'entidades_personas'
+      } else if (deletingEntidad.tipo === 'letrado') {
+        tableName = 'entidades_letrados'
+      }
+
       const { error } = await supabase
-        .from('entidades_dgs')
+        .from(tableName)
         .delete()
         .eq('id', deletingEntidad.id)
         .eq('usuario', user.id) // Seguridad adicional
@@ -306,14 +519,36 @@ export function EncartadosSection({
     }
 
     try {
-      const { error } = await supabase
-        .from('entidades_dgs')
-        .delete()
-        .eq('usuario', user.id)
+      // Eliminar de las tres tablas en paralelo
+      const [atestadosResult, personasResult, letradosResult] = await Promise.all([
+        supabase
+          .from('entidades_dgs')
+          .delete()
+          .eq('usuario', user.id),
+        supabase
+          .from('entidades_personas')
+          .delete()
+          .eq('usuario', user.id),
+        supabase
+          .from('entidades_letrados')
+          .delete()
+          .eq('usuario', user.id)
+      ])
 
-      if (error) {
-        console.error('Error al eliminar todas las entidades:', error)
-        toast.error('Error al eliminar todas las entidades')
+      // Verificar errores
+      if (atestadosResult.error) {
+        console.error('Error al eliminar atestados:', atestadosResult.error)
+        toast.error('Error al eliminar los atestados')
+        return
+      }
+      if (personasResult.error) {
+        console.error('Error al eliminar personas:', personasResult.error)
+        toast.error('Error al eliminar las personas')
+        return
+      }
+      if (letradosResult.error) {
+        console.error('Error al eliminar letrados:', letradosResult.error)
+        toast.error('Error al eliminar los letrados')
         return
       }
 
@@ -429,15 +664,75 @@ export function EncartadosSection({
             ) : (
               <div className="space-y-3">
                 {entidades.map((entidad) => (
-                  <div key={entidad.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div key={`${entidad.tipo}-${entidad.id}`} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex-1">
-                      <div className="font-medium">{entidad.numero}</div>
-                      <div className="text-sm text-muted-foreground mt-1">
-                        <span className="font-medium">Delito:</span> {entidad.delito}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        <span className="font-medium">Juzgado:</span> {entidad.juzgado}
-                      </div>
+                      {/* Mostrar información según el tipo de entidad */}
+                      {entidad.tipo === 'atestado' && (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                              Atestado
+                            </span>
+                            <div className="font-medium">{entidad.numero}</div>
+                          </div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            <span className="font-medium">Delito:</span> {entidad.delito}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            <span className="font-medium">Juzgado:</span> {entidad.juzgado}
+                          </div>
+                        </>
+                      )}
+                      {entidad.tipo === 'persona' && (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                              Persona
+                            </span>
+                            <div className="font-medium">
+                              {entidad.nombre} {entidad.apellido1} {entidad.apellido2}
+                            </div>
+                          </div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            <span className="font-medium">Documento:</span> {entidad.documento}
+                          </div>
+                          {entidad.relacion && (
+                            <div className="text-sm text-muted-foreground">
+                              <span className="font-medium">Relación:</span> {entidad.relacion}
+                            </div>
+                          )}
+                          {entidad.telefono && (
+                            <div className="text-sm text-muted-foreground">
+                              <span className="font-medium">Teléfono:</span> {entidad.telefono}
+                            </div>
+                          )}
+                        </>
+                      )}
+                      {entidad.tipo === 'letrado' && (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">
+                              Letrado
+                            </span>
+                            <div className="font-medium">
+                              {entidad.nombreLetrado} {entidad.apellidosLetrado}
+                            </div>
+                          </div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            <span className="font-medium">Colegio:</span> {entidad.colegio}
+                          </div>
+                          {entidad.numeroColegial && (
+                            <div className="text-sm text-muted-foreground">
+                              <span className="font-medium">Nº Colegial:</span> {entidad.numeroColegial}
+                            </div>
+                          )}
+                          {entidad.telefonoLetrado && (
+                            <div className="text-sm text-muted-foreground">
+                              <span className="font-medium">Teléfono:</span> {entidad.telefonoLetrado}
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
@@ -761,7 +1056,7 @@ export function EncartadosSection({
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará permanentemente la entidad "{deletingEntidad?.numero}".
+              Esta acción no se puede deshacer. Se eliminará permanentemente {deletingEntidad?.tipo === 'atestado' ? `el atestado "${deletingEntidad?.numero}"` : deletingEntidad?.tipo === 'persona' ? `la persona "${deletingEntidad?.nombre} ${deletingEntidad?.apellido1}"` : deletingEntidad?.tipo === 'letrado' ? `el letrado "${deletingEntidad?.nombreLetrado} ${deletingEntidad?.apellidosLetrado}"` : 'esta entidad'}.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -791,8 +1086,10 @@ export function EncartadosSection({
                 </p>
                 <ul className="list-disc list-inside space-y-1 text-sm">
                   <li><strong>{entidades.length}</strong> entidades registradas</li>
-                  <li>Todos los datos asociados (números DGS, delitos, juzgados)</li>
-                  <li>El historial completo de entidades</li>
+                  <li>Todos los <strong>atestados</strong> (números DGS, delitos, juzgados)</li>
+                  <li>Todas las <strong>personas</strong> (denunciantes, denunciados, testigos, etc.)</li>
+                  <li>Todos los <strong>letrados</strong> (abogados y representantes legales)</li>
+                  <li>El historial completo de todas las entidades</li>
                 </ul>
               </div>
               <p className="text-center font-medium">
