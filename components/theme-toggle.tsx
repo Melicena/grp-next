@@ -11,14 +11,14 @@ export function ThemeToggle() {
 
   useEffect(() => {
     setMounted(true)
-  }, [])
+  }, []) // Agregué el array de dependencias vacío que faltaba
 
   if (!mounted) {
     return (
       <Button 
-        variant="outline" 
-        size="icon" 
-        className="h-9 w-9 border-2 bg-background/50 backdrop-blur-sm hover:bg-accent hover:text-accent-foreground transition-all duration-200"
+        variant="ghost" 
+        size="sm" 
+        className="text-sidebar-foreground hover:bg-sidebar-accent"
       >
         <Sun className="h-4 w-4" />
       </Button>
@@ -27,15 +27,15 @@ export function ThemeToggle() {
 
   return (
     <Button
-      variant="outline"
-      size="icon"
+      variant="ghost"
+      size="sm"
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      className="h-9 w-9 border-2 bg-background/50 backdrop-blur-sm hover:bg-accent hover:text-accent-foreground transition-all duration-200 shadow-sm"
+      className="text-sidebar-foreground hover:bg-sidebar-accent"
     >
       {theme === 'dark' ? (
-        <Sun className="h-4 w-4 text-yellow-500" />
+        <Sun className="h-4 w-4" />
       ) : (
-        <Moon className="h-4 w-4 text-slate-600" />
+        <Moon className="h-4 w-4" />
       )}
       <span className="sr-only">Cambiar tema</span>
     </Button>

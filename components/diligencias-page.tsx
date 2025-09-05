@@ -214,7 +214,7 @@ interface DiligenciasPageProps {
 export function DiligenciasPage({ className }: DiligenciasPageProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [filtroTipo, setFiltroTipo] = useState("todos")
-  const [filtroEstado, setFiltroEstado] = useState("todos")
+  const [filtroEstado] = useState("todos")
 
   // Obtener tipos únicos para el filtro - ahora desde arrays
   const tiposUnicos = Array.from(new Set(diligenciasData.flatMap(d => d.tipo))).sort()
@@ -229,7 +229,7 @@ export function DiligenciasPage({ className }: DiligenciasPageProps) {
     const matchesEstado = filtroEstado === "todos" 
     
     return matchesSearch && matchesTipo && matchesEstado
-  })
+  }).sort((a, b) => a.titulo.localeCompare(b.titulo))
 
   const handleVerDocumento = (id: string) => {
     // Aquí puedes implementar la navegación a la página específica del documento
@@ -258,40 +258,43 @@ export function DiligenciasPage({ className }: DiligenciasPageProps) {
       {/* Buscador y Filtros */}
       <Card>
         <CardContent className="space-y-4">
-          {/* Buscador principal */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-foreground/70" />
-            <Input
-              placeholder="Buscar diligencias..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 border-2 border-foreground/30 bg-background/80 backdrop-blur-sm focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all duration-200 placeholder:text-foreground/50 text-foreground font-medium shadow-sm"
-            />
-          </div>
-
-          {/* Filtros */}
-          <div className="bg-muted/30 rounded-lg border p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-muted-foreground">Filtros</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Tipo de Diligencia</label>
-                <Select value={filtroTipo} onValueChange={setFiltroTipo}>
-                  <SelectTrigger className="border-2 focus:border-primary/50">
-                    <SelectValue placeholder="Seleccionar tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos los tipos</SelectItem>
-                    {tiposUnicos.map((tipo) => (
-                      <SelectItem key={tipo} value={tipo}>
-                        {tipo}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          {/* Buscador y Filtros en una sola fila */}
+          <div className="flex flex-col lg:flex-row gap-4 items-end">
+            {/* Buscador principal */}
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-2 block">Buscar</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-foreground/70" />
+                <Input
+                  placeholder="Buscar diligencias..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 border-2 border-foreground/30 bg-background/80 backdrop-blur-sm focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all duration-200 placeholder:text-foreground/50 text-foreground font-medium shadow-sm"
+                />
               </div>
+            </div>
+
+            {/* Filtro de Tipo */}
+            <div className="w-full lg:w-64">
+              <label className="text-sm font-medium mb-2 block">Tipo de Diligencia</label>
+              <Select value={filtroTipo} onValueChange={setFiltroTipo}>
+                <SelectTrigger className="border-2 focus:border-primary/50">
+                  <SelectValue placeholder="Seleccionar tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos los tipos</SelectItem>
+                  {tiposUnicos.map((tipo) => (
+                    <SelectItem key={tipo} value={tipo}>
+                      {tipo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Icono de filtros */}
+            <div className="hidden lg:flex items-center justify-center w-10 h-10 rounded-lg bg-muted/30 border">
+              <Filter className="h-4 w-4 text-muted-foreground" />
             </div>
           </div>
 
@@ -322,14 +325,14 @@ export function DiligenciasPage({ className }: DiligenciasPageProps) {
                 <CardHeader className="">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex-1 space-y-1">
-                      <div className="space-y-3">
-                        <CardTitle className="text-lg leading-tight">{diligencia.titulo}</CardTitle>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <CardTitle className="text-sm leading-tight">{diligencia.titulo}</CardTitle>
                         <div className="flex flex-wrap gap-1">
                           {diligencia.tipo.map((tipo, index) => (
                             <Badge 
                               key={index}
                               variant="secondary" 
-                              className={`${getTipoBadgeVariant(tipo)} font-medium px-3 text-xs rounded-md shadow-sm w-fit`}
+                              className={`${getTipoBadgeVariant(tipo)} font-medium px-1.5 py-0 rounded-md shadow-sm w-fit text-[10px]`}
                             >
                               {tipo}
                             </Badge>

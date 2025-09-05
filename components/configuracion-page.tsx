@@ -62,12 +62,10 @@ export default function ConfiguracionPage() {
       if (user) {
         setUserId(user.id)
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error obteniendo usuario:', error)
-      toast({
-        title: "Error",
-        description: "No se pudo obtener la información del usuario",
-        variant: "destructive"
+      toast.error("Error", {
+        description: "No se pudo obtener la información del usuario"
       })
     }
   }
@@ -104,12 +102,10 @@ export default function ConfiguracionPage() {
           zona: data.zona || ""
         })
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error cargando configuración:', error)
-      toast({
-        title: "Error",
-        description: "No se pudo cargar la configuración",
-        variant: "destructive"
+      toast.error("Error", {
+        description: "No se pudo cargar la configuración"
       })
     } finally {
       setLoading(false)
@@ -139,22 +135,23 @@ export default function ConfiguracionPage() {
         }, {
           onConflict: 'usuario'
         })
-  
-        if (error) throw error
-  
-        toast.success("Datos guardados exitosamente", {
-          description: "La configuración de tu unidad se ha actualizado correctamente",
-          duration: 5000
-        })
-      } catch (error) {
-        console.error('Error guardando configuración:', error)
-        toast.error("Error", {
-          description: `No se pudo guardar la configuración: ${error.message}`
-        })
-      } finally {
-        setSaving(false)
-      }
+
+      if (error) throw error
+
+      toast.success("Datos guardados exitosamente", {
+        description: "La configuración de tu unidad se ha actualizado correctamente",
+        duration: 5000
+      })
+    } catch (error: unknown) {
+      console.error('Error guardando configuración:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+      toast.error("Error", {
+        description: `No se pudo guardar la configuración: ${errorMessage}`
+      })
+    } finally {
+      setSaving(false)
     }
+  }
 
     if (loading) {
       return (

@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { useAuth } from "@/contexts/auth-context"
 import {
   FileText,
   Code,
@@ -21,7 +22,7 @@ import {
   Settings,
   Menu,
   X,
-  Plus,
+  LogOut,
 } from "lucide-react"
 
 const navigationItems = [
@@ -47,6 +48,16 @@ export function SharedLayout({ children }: SharedLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
+  const { signOut } = useAuth()
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      // La redirección se maneja automáticamente en el contexto de autenticación
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error)
+    }
+  }
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/"
@@ -88,8 +99,13 @@ export function SharedLayout({ children }: SharedLayoutProps) {
             >
               <Settings className="h-4 w-4" />
             </Button>
-            <Button variant="secondary" size="sm" className="text-sidebar-foreground hover:bg-sidebar-accent">
-              <Plus className="h-4 w-4 mr-1" /> AÑADIR
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-red-400 hover:bg-red-900/20"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>
