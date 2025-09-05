@@ -190,22 +190,6 @@ export default function CaratulaArchivoPage() {
     // El formulario se enviará automáticamente al servidor con todos los valores
   }
 
-  // Efecto para cerrar la lista al hacer clic fuera
-  // Eliminar todo este useEffect:
-  // useEffect(() => {
-  //   const handleClickOutside = (event: MouseEvent) => {
-  //     const target = event.target as Element
-  //     if (!target.closest('.relative')) {
-  //       setMostrarLista(false)
-  //     }
-  //   }
-  //
-  //   if (mostrarLista) {
-  //     document.addEventListener('mousedown', handleClickOutside)
-  //     return () => document.removeEventListener('mousedown', handleClickOutside)
-  //   }
-  // }, [mostrarLista])
-
   if (loading) {
     return (
       <SharedLayout>
