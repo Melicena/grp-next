@@ -7,13 +7,15 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BackButton } from "@/components/back-button"
 import { useState, useEffect } from "react"
 import { Archive, Send, Plus, Loader2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/auth-context"
-import { PREDEFINED_TEXT, SPANISH_MONTHS } from "./constants"
+import { SPANISH_MONTHS } from "../archivo/constants"
+import { DELITOS } from "@/delitos"
 
 function formatSpanishDate(): string {
   const now = new Date()
@@ -54,10 +56,11 @@ interface EntidadDGS {
   usuario: string
 }
 
-export default function ArchivoPage() {
+export default function CaratulaArchivoPage() {
   const [atestado, setAtestado] = useState("")
   const [fecha, setFecha] = useState("")
-  const [texto, setTexto] = useState(PREDEFINED_TEXT)
+  const [instructor, setInstructor] = useState("")
+  const [supuesto, setSupuesto] = useState("")
   const [userData, setUserData] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
   
@@ -69,7 +72,6 @@ export default function ArchivoPage() {
   const { user } = useAuth()
   const [userId, setUserId] = useState<string | null>(null)
 
-  // Efecto para actualizar el atestado cuando se cargan los datos del usuario
   useEffect(() => {
     if (userData?.codigo_unidad) {
       const currentYear = new Date().getFullYear()
@@ -188,16 +190,21 @@ export default function ArchivoPage() {
     // El formulario se enviará automáticamente al servidor con todos los valores
   }
 
-  // Función para ajustar automáticamente la altura del textarea
-const adjustTextareaHeight = (element: HTMLTextAreaElement) => {
-element.style.height = 'auto'
-element.style.height = element.scrollHeight + 'px'
-}
-
-const handleTextoChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-setTexto(e.target.value)
-adjustTextareaHeight(e.target)
-}
+  // Efecto para cerrar la lista al hacer clic fuera
+  // Eliminar todo este useEffect:
+  // useEffect(() => {
+  //   const handleClickOutside = (event: MouseEvent) => {
+  //     const target = event.target as Element
+  //     if (!target.closest('.relative')) {
+  //       setMostrarLista(false)
+  //     }
+  //   }
+  //
+  //   if (mostrarLista) {
+  //     document.addEventListener('mousedown', handleClickOutside)
+  //     return () => document.removeEventListener('mousedown', handleClickOutside)
+  //   }
+  // }, [mostrarLista])
 
   if (loading) {
     return (
@@ -220,9 +227,9 @@ adjustTextareaHeight(e.target)
           <div className="flex items-center gap-3">
             <Archive className="h-8 w-8 text-primary" />
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Archivo de Diligencias</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Carátula de Archivo</h1>
               <p className="text-muted-foreground">
-                Formulario para el archivado de diligencias policiales
+                Formulario para la carátula de archivo de diligencias policiales
               </p>
             </div>
           </div>
@@ -235,7 +242,7 @@ adjustTextareaHeight(e.target)
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Archive className="h-5 w-5" />
-                Datos de la Diligencia
+                Datos de la Carátula
               </div>
               <Button
                 type="button"
@@ -249,13 +256,13 @@ adjustTextareaHeight(e.target)
               </Button>
             </CardTitle>
             <CardDescription>
-              Complete los siguientes campos para procesar el archivo de la diligencia
+              Complete los siguientes campos para procesar la carátula de archivo
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form 
-              id="formArchivo"
-              action="https://gpr-server.dj1x7g.easypanel.host/procesar-diligencia-archivo"
+              id="formCaratulaArchivo"
+              action="https://gpr-server.dj1x7g.easypanel.host/procesar-caratula-archivo"
               method="POST"
               onSubmit={handleSubmit}
               className="space-y-6"
@@ -292,21 +299,43 @@ adjustTextareaHeight(e.target)
                 />
               </div>
 
-              {/* Campo Texto */}
+              {/* Campo Instructor */}
               <div className="space-y-2">
-                <Label htmlFor="texto" className="text-sm font-medium">
-                  Texto de la diligencia
+                <Label htmlFor="instructor" className="text-sm font-medium">
+                  Instructor
                 </Label>
-                <Textarea
-                  id="texto"
-                  name="texto_diligencia"
-                  value={texto}
-                  onChange={handleTextoChange}
-                  className="min-h-[100px] font-mono text-sm leading-relaxed border-2 border-gray-300 bg-white focus:border-blue-500 focus:bg-blue-50 dark:border-gray-600 dark:bg-gray-800 dark:focus:border-blue-400 dark:focus:bg-gray-700 resize-none overflow-hidden"
-                  placeholder="Texto de la diligencia..."
-                  spellCheck={false}
-                  onInput={(e) => adjustTextareaHeight(e.target as HTMLTextAreaElement)}
+                <Input
+                  id="instructor"
+                  name="instructor"
+                  type="text"
+                  value={instructor}
+                  onChange={(e) => setInstructor(e.target.value)}
+                  className="font-mono border-2 border-gray-300 bg-white focus:border-blue-500 focus:bg-blue-50 dark:border-gray-600 dark:bg-gray-800 dark:focus:border-blue-400 dark:focus:bg-gray-700"
+                  placeholder="Nombre del instructor"
                 />
+              </div>
+
+              {/* Campo Supuesto */}
+              <div className="space-y-2">
+                <Label htmlFor="supuesto" className="text-sm font-medium">
+                  Supuesto
+                </Label>
+                <input
+                  type="text"
+                  id="supuesto"
+                  name="supuesto"
+                  list="delitos_list"
+                  value={supuesto}
+                  onChange={(e) => setSupuesto(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 font-mono border-2 border-gray-300 bg-white focus:border-blue-500 focus:bg-blue-50 dark:border-gray-600 dark:bg-gray-800 dark:focus:border-blue-400 dark:focus:bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Seleccionar delito o escribir manualmente..."
+                />
+                <datalist id="delitos_list">
+                  {DELITOS.map((delito, index) => (
+                    <option key={index} value={delito.label} />
+                  ))}
+                </datalist>
               </div>
 
               {/* Campos ocultos para el servidor - ahora con datos reales */}
@@ -325,7 +354,7 @@ adjustTextareaHeight(e.target)
                 <BackButton href="/diligencias" variant="outline" />
                 <Button type="submit" className="flex items-center gap-2">
                   <Send className="h-4 w-4" />
-                  Generar diligencia
+                  Generar carátula
                 </Button>
               </div>
             </form>
@@ -393,6 +422,3 @@ adjustTextareaHeight(e.target)
     </SharedLayout>
   )
 }
-
-
-
