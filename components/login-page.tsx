@@ -336,14 +336,3 @@ export function LoginPage() {
     </>
   )
 }
-
-// En la función signIn, después de la línea 60:
-const signIn = async (email: string, password: string) => {
-  console.log('🟠 LOGIN: Intentando iniciar sesión con:', email)
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
-  console.log('🟠 LOGIN: Resultado del login:', { error: error?.message })
-  return { error }
-}
