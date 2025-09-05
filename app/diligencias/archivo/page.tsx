@@ -6,11 +6,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { BackButton } from "@/components/back-button"
 import { useState, useEffect } from "react"
-import { Archive, Send } from "lucide-react"
+import { Archive, Send, Plus, Loader2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
+import { useAuth } from "@/contexts/auth-context"
 import { PREDEFINED_TEXT, SPANISH_MONTHS } from "./constants"
 
 function formatSpanishDate(): string {
@@ -42,12 +44,29 @@ interface UserData {
   zona: string
 }
 
+// Interfaz para las entidades DGS
+interface EntidadDGS {
+  id: number
+  numero: string
+  delito: string
+  juzgado: string
+  created_at: string
+  usuario: string
+}
+
 export default function ArchivoPage() {
   const [atestado, setAtestado] = useState("")
   const [fecha, setFecha] = useState("")
   const [texto, setTexto] = useState(PREDEFINED_TEXT)
   const [userData, setUserData] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
+  
+  // Estados para el modal de entidades
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [entidades, setEntidades] = useState<EntidadDGS[]>([])
+  const [loadingEntidades, setLoadingEntidades] = useState(false)
+
+  const { user } = useAuth()
   const [userId, setUserId] = useState<string | null>(null)
 
   // Efecto para actualizar el atestado cuando se cargan los datos del usuario
@@ -124,6 +143,46 @@ export default function ArchivoPage() {
     }
   }
 
+  // Función para cargar entidades DGS
+  const loadEntidades = async () => {
+    if (!user) return
+    
+    setLoadingEntidades(true)
+    try {
+      const { data, error } = await supabase
+        .from('entidades_dgs')
+        .select('*')
+        .eq('usuario', user.id)
+        .order('created_at', { ascending: false })
+  
+      if (error) {
+        console.error('Error al cargar entidades:', error)
+        toast.error('Error al cargar las entidades DGS')
+        return
+      }
+  
+      setEntidades(data || [])
+    } catch (error) {
+      console.error('Error inesperado:', error)
+      toast.error('Error inesperado al cargar entidades')
+    } finally {
+      setLoadingEntidades(false)
+    }
+  }
+
+  // Función para seleccionar una entidad
+  const handleSelectEntidad = (entidad: EntidadDGS) => {
+    setAtestado(entidad.numero)
+    setIsModalOpen(false)
+    toast.success(`Atestado ${entidad.numero} seleccionado`)
+  }
+
+  // Función para abrir el modal y cargar entidades
+  const handleOpenModal = async () => {
+    setIsModalOpen(true)
+    await loadEntidades()
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     // El formulario se enviará automáticamente al servidor con todos los valores
   }
@@ -161,9 +220,21 @@ export default function ArchivoPage() {
         {/* Formulario */}
         <Card className="max-w-4xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Archive className="h-5 w-5" />
-              Datos de la Diligencia
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Archive className="h-5 w-5" />
+                Datos de la Diligencia
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+                onClick={handleOpenModal}
+              >
+                <Plus className="h-4 w-4" />
+                Añadir atestado
+              </Button>
             </CardTitle>
             <CardDescription>
               Complete los siguientes campos para procesar el archivo de la diligencia
@@ -247,6 +318,66 @@ export default function ArchivoPage() {
           </CardContent>
         </Card>
       </div>
+       {/* Modal para seleccionar entidades DGS */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Seleccionar Entidad DGS</DialogTitle>
+            <DialogDescription>
+              Selecciona una entidad DGS de la lista para añadir al atestado.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto">
+            {loadingEntidades ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <span className="ml-2">Cargando entidades...</span>
+              </div>
+            ) : entidades.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Archive className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No hay entidades DGS disponibles</p>
+                <p className="text-sm">Crea una nueva entidad desde la sección correspondiente</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {entidades.map((entidad) => (
+                  <div
+                    key={entidad.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => handleSelectEntidad(entidad)}
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <p className="font-medium">{entidad.numero}</p>
+                          <p className="text-sm text-muted-foreground">{entidad.delito}</p>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          <p>{entidad.juzgado}</p>
+                          <p>{new Date(entidad.created_at).toLocaleDateString('es-ES')}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm">
+                      Seleccionar
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+              Cancelar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SharedLayout>
   )
 }
+
+

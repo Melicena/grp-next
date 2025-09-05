@@ -34,6 +34,12 @@ interface Entidad {
   usuario: string
 }
 
+// Añadir interfaz para los datos del usuario
+interface UserData {
+  codigo_unidad: string
+  // otros campos si son necesarios
+}
+
 export function EncartadosSection({ 
   title = "Entidades Relacionados",
   description = "Denunciantes, denunciados, detenidos, letrados, testigos, etc.",
@@ -46,6 +52,7 @@ export function EncartadosSection({
   const [entidades, setEntidades] = useState<Entidad[]>([])
   const [editingEntidad, setEditingEntidad] = useState<Entidad | null>(null)
   const [deletingEntidad, setDeletingEntidad] = useState<Entidad | null>(null)
+  const [userData, setUserData] = useState<UserData | null>(null)
   const [formData, setFormData] = useState<FormData>({
     numero: '',
     delito: '',
@@ -53,12 +60,50 @@ export function EncartadosSection({
   })
   const { user } = useAuth()
 
-  // Cargar entidades al montar el componente
+  // Cargar datos del usuario y entidades al montar el componente
   useEffect(() => {
     if (user) {
+      loadUserData()
       loadEntidades()
     }
   }, [user])
+
+  // Actualizar el valor inicial del número cuando se cargan los datos del usuario
+  useEffect(() => {
+    if (userData?.codigo_unidad && !editingEntidad) {
+      const currentYear = new Date().getFullYear()
+      const initialNumero = `${currentYear}-${userData.codigo_unidad}`
+      setFormData(prev => ({
+        ...prev,
+        numero: initialNumero
+      }))
+    }
+  }, [userData, editingEntidad])
+
+  const loadUserData = async () => {
+    if (!user) return
+    
+    try {
+      const { data, error } = await supabase
+        .from('datos')
+        .select('codigo_unidad')
+        .eq('usuario', user.id)
+        .single()
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error al cargar datos del usuario:', error)
+        return
+      }
+
+      if (data) {
+        setUserData({
+          codigo_unidad: data.codigo_unidad || ''
+        })
+      }
+    } catch (error) {
+      console.error('Error inesperado al cargar datos del usuario:', error)
+    }
+  }
 
   const loadEntidades = async () => {
     if (!user) return
@@ -208,6 +253,28 @@ export function EncartadosSection({
     setIsModalOpen(true)
   }
 
+  const resetForm = () => {
+    const currentYear = new Date().getFullYear()
+    const initialNumero = userData?.codigo_unidad ? `${currentYear}-${userData.codigo_unidad}-` : ''
+    
+    setFormData({
+      numero: initialNumero,
+      delito: '',
+      juzgado: ''
+    })
+    setEditingEntidad(null)
+  }
+
+  const handleOpenModal = () => {
+    resetForm()
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    resetForm()
+    setIsModalOpen(false)
+  }
+  
   return (
     <div className={`mt-8 ${className}`}>
       <h3 className="text-xl font-semibold mb-4">{title}</h3>
@@ -220,26 +287,15 @@ export function EncartadosSection({
             </div>
             {showActions && (
               <div className="flex gap-2 flex-wrap">
+             
                 <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleAddNew}
+                  onClick={handleOpenModal}
+                  className="flex items-center gap-2"
                 >
-                  <UserPlus className="h-4 w-4 mr-2" /> Añadir
+                  <UserPlus className="h-4 w-4" />
+                  Añadir Entidad
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={loadEntidades}
-                  disabled={isLoadingEntidades}
-                >
-                  {isLoadingEntidades ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Upload className="h-4 w-4 mr-2" />
-                  )}
-                  Cargar
-                </Button>
+       
                 <Button variant="outline" size="sm">
                   <Save className="h-4 w-4 mr-2" /> Guardar
                 </Button>
@@ -328,7 +384,11 @@ export function EncartadosSection({
                 value={formData.numero}
                 onChange={(e) => handleInputChange('numero', e.target.value)}
                 className="col-span-3"
-                placeholder="Ej: DGS-2024-001"
+                placeholder="Ej: 2025-1353-568"
+                onFocus={(e) => {
+                  // Evitar la selección automática del texto
+                  e.target.setSelectionRange(e.target.value.length, e.target.value.length)
+                }}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
