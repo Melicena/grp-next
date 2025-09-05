@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { diligenciasData } from "@/app/diligencias/diligencias-data"
 import {
   FileText,
   Code,
@@ -57,9 +58,7 @@ export function PoliceDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-
       <div className="flex">
-
         {/* Main Content */}
         <main className="flex-1 p-6">
           {activeSection === "dashboard" ? (
@@ -69,78 +68,75 @@ export function PoliceDashboard() {
                 <p className="text-muted-foreground mt-2">Acceso rápido a todas las funciones del sistema policial</p>
               </div>
 
-              {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Atestados Activos</CardTitle>
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">24</div>
-                    <p className="text-xs text-muted-foreground">+2 desde ayer</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Diligencias Pendientes</CardTitle>
-                    <ClipboardList className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">12</div>
-                    <p className="text-xs text-muted-foreground">-3 desde ayer</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Personal Activo</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">156</div>
-                    <p className="text-xs text-muted-foreground">+1 desde ayer</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Eventos Hoy</CardTitle>
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">8</div>
-                    <p className="text-xs text-muted-foreground">3 completados</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-
-
               {/* Quick Access Grid */}
               <div>
-                <h3 className="text-xl font-semibold mb-4">Acceso Rápido</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {navigationItems.map((item) => (
-                    <Card
-                      key={item.id}
-                      className="cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() => setActiveSection(item.id)}
-                    >
-                      <CardHeader>
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-primary/10 rounded-lg">
-                            <item.icon className="h-6 w-6 text-primary" />
+                  {navigationItems.map((item) => {
+                    // Función para obtener el contador según el tipo de tarjeta
+                    const getCounterValue = (itemId: string) => {
+                      switch (itemId) {
+                        case "diligencias":
+                          return diligenciasData.length;
+                        case "atestados":
+                          return 0; // Temporal - pendiente fuente de datos
+                        case "codificados":
+                          return 0; // Temporal - pendiente fuente de datos
+                        case "directorio":
+                          return 0; // Temporal - pendiente fuente de datos
+                        case "eventos":
+                          return 0; // Temporal - pendiente fuente de datos
+                        case "novedades":
+                          return 0; // Temporal - pendiente fuente de datos
+                        case "guias":
+                          return 0; // Temporal - pendiente fuente de datos
+                        case "impresos":
+                          return 0; // Temporal - pendiente fuente de datos
+                        case "instancias":
+                          return 0; // Temporal - pendiente fuente de datos
+                        case "oficios":
+                          return 0; // Temporal - pendiente fuente de datos
+                        case "personal":
+                          return 0; // Temporal - pendiente fuente de datos
+                        case "repositorio":
+                          return 0; // Temporal - pendiente fuente de datos
+                        default:
+                          return 0;
+                      }
+                    };
+
+                    return (
+                      <Card
+                        key={item.id}
+                        className="cursor-pointer hover:shadow-md transition-shadow relative"
+                        onClick={() => {
+                          if (item.id === "diligencias") {
+                            router.push("/diligencias");
+                          } else {
+                            setActiveSection(item.id);
+                          }
+                        }}
+                      >
+                        <CardHeader>
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                              <item.icon className="h-6 w-6 text-primary" />
+                            </div>
+                            <div>
+                              <CardTitle className="text-lg">{item.name}</CardTitle>
+                              <CardDescription>{item.description}</CardDescription>
+                            </div>
                           </div>
-                          <div>
-                            <CardTitle className="text-lg">{item.name}</CardTitle>
-                            <CardDescription>{item.description}</CardDescription>
+                          {/* Contador elegante con color uniforme para todas las tarjetas */}
+                          <div className="absolute top-2 right-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg backdrop-blur-sm border border-white/20">
+                            <div className="flex items-center gap-1">
+                              <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
+                              <span>{getCounterValue(item.id)}</span>
+                            </div>
                           </div>
-                        </div>
-                      </CardHeader>
-                    </Card>
-                  ))}
+                        </CardHeader>
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
             
