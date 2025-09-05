@@ -10,66 +10,73 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Shield, Mail, Lock, User, ArrowLeft, Eye, EyeOff, AlertTriangle } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
+import { supabase } from "@/lib/supabase"
 
 export function LoginPage() {
   const { signIn, signUp, resetPassword } = useAuth()
+  const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [loginData, setLoginData] = useState({ email: "", password: "" })
-  const [registerData, setRegisterData] = useState({ 
-    name: "", 
-    email: "", 
-    password: "", 
-    confirmPassword: "" 
-  })
-  const [forgotPasswordData, setForgotPasswordData] = useState({ email: "" })
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [isLoading, setIsLoading] = useState(false)
-  const [successMessage, setSuccessMessage] = useState("")
   const [showErrorDialog, setShowErrorDialog] = useState(false)
-  const [errorDialogMessage, setErrorDialogMessage] = useState("")
+  const [errorDialogMessage, setErrorDialogMessage] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
+  
+  const [loginData, setLoginData] = useState({
+    email: '',
+    password: ''
+  })
+  
+  const [registerData, setRegisterData] = useState({
+    email: '',
+    password: '',
+    confirmPassword: ''
+  })
+  
+  const [forgotPasswordData, setForgotPasswordData] = useState({
+    email: ''
+  })
+  
+  const [errors, setErrors] = useState<{[key: string]: string}>({})
 
+  // Función para validar email
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return emailRegex.test(email)
   }
 
+  // Función para validar contraseña
   const validatePassword = (password: string) => {
     return password.length >= 6
   }
 
-  const clearLoginForm = () => {
-    setLoginData({ email: "", password: "" })
-  }
-
-  const clearRegisterForm = () => {
-    setRegisterData({ name: "", email: "", password: "", confirmPassword: "" })
-  }
-
-  const clearForgotPasswordForm = () => {
-    setForgotPasswordData({ email: "" })
-  }
-
-  const showErrorAlert = (message: string) => {
+  // Función para mostrar errores
+  const showError = (message: string) => {
     setErrorDialogMessage(message)
     setShowErrorDialog(true)
   }
 
+  // Función para limpiar mensajes
+  const clearMessages = () => {
+    setErrors({})
+    setSuccessMessage('')
+  }
+
+  // Manejar login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setErrors({})
-    setSuccessMessage("")
-    console.log('Login data:', loginData) // Agregar esta línea
-    const newErrors: Record<string, string> = {}
+    clearMessages()
+    
+    // Validaciones
+    const newErrors: {[key: string]: string} = {}
     
     if (!loginData.email) {
-      newErrors.email = "El email es requerido"
+      newErrors.email = 'El email es requerido'
     } else if (!validateEmail(loginData.email)) {
-      newErrors.email = "Ingresa un email válido"
+      newErrors.email = 'Ingresa un email válido'
     }
     
     if (!loginData.password) {
-      newErrors.password = "La contraseña es requerida"
+      newErrors.password = 'La contraseña es requerida'
     }
     
     if (Object.keys(newErrors).length > 0) {
@@ -83,60 +90,45 @@ export function LoginPage() {
       const { error } = await signIn(loginData.email, loginData.password)
       
       if (error) {
-        // Mostrar ventana de advertencia y limpiar formulario
-        let errorMessage = "Credenciales incorrectas"
-        
-        if (error.message.includes("Invalid login credentials")) {
-          errorMessage = "Email o contraseña incorrectos. Por favor, verifica tus credenciales."
-        } else if (error.message.includes("Email not confirmed")) {
-          errorMessage = "Por favor, confirma tu email antes de iniciar sesión."
-        } else if (error.message.includes("Too many requests")) {
-          errorMessage = "Demasiados intentos. Por favor, espera un momento antes de intentar nuevamente."
+        if (error.message.includes('Invalid login credentials')) {
+          showError('Credenciales incorrectas. Verifica tu email y contraseña.')
+        } else if (error.message.includes('Email not confirmed')) {
+          showError('Debes confirmar tu email antes de iniciar sesión. Revisa tu bandeja de entrada.')
         } else {
-          errorMessage = error.message || "Error al iniciar sesión"
+          showError(`Error al iniciar sesión: ${error.message}`)
         }
-        
-        showErrorAlert(errorMessage)
-        clearLoginForm()
-      } else {
-        setSuccessMessage("¡Inicio de sesión exitoso!")
-        // La redirección se maneja automáticamente en el contexto de autenticación
       }
     } catch (error) {
-      showErrorAlert("Error inesperado al iniciar sesión")
-      clearLoginForm()
+      showError('Error inesperado al iniciar sesión')
     } finally {
       setIsLoading(false)
     }
   }
 
+  // Manejar registro
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
-    setErrors({})
-    setSuccessMessage("")
+    clearMessages()
     
-    const newErrors: Record<string, string> = {}
-    
-    if (!registerData.name) {
-      newErrors.name = "El nombre es requerido"
-    }
+    // Validaciones
+    const newErrors: {[key: string]: string} = {}
     
     if (!registerData.email) {
-      newErrors.email = "El email es requerido"
+      newErrors.email = 'El email es requerido'
     } else if (!validateEmail(registerData.email)) {
-      newErrors.email = "Ingresa un email válido"
+      newErrors.email = 'Ingresa un email válido'
     }
     
     if (!registerData.password) {
-      newErrors.password = "La contraseña es requerida"
+      newErrors.password = 'La contraseña es requerida'
     } else if (!validatePassword(registerData.password)) {
-      newErrors.password = "La contraseña debe tener al menos 6 caracteres"
+      newErrors.password = 'La contraseña debe tener al menos 6 caracteres'
     }
     
     if (!registerData.confirmPassword) {
-      newErrors.confirmPassword = "Confirma tu contraseña"
+      newErrors.confirmPassword = 'Confirma tu contraseña'
     } else if (registerData.password !== registerData.confirmPassword) {
-      newErrors.confirmPassword = "Las contraseñas no coinciden"
+      newErrors.confirmPassword = 'Las contraseñas no coinciden'
     }
     
     if (Object.keys(newErrors).length > 0) {
@@ -147,45 +139,68 @@ export function LoginPage() {
     setIsLoading(true)
     
     try {
-      const { error } = await signUp(registerData.email, registerData.password)
+      // Registrar usuario en Supabase Auth
+      const { error: authError, data } = await supabase.auth.signUp({
+        email: registerData.email,
+        password: registerData.password,
+      })
       
-      if (error) {
-        let errorMessage = "Error al registrarse"
-        
-        if (error.message.includes("User already registered")) {
-          errorMessage = "Este email ya está registrado. Intenta iniciar sesión."
-        } else if (error.message.includes("Password should be at least")) {
-          errorMessage = "La contraseña debe tener al menos 6 caracteres."
+      if (authError) {
+        if (authError.message.includes('User already registered')) {
+          showError('Este email ya está registrado. Intenta iniciar sesión.')
         } else {
-          errorMessage = error.message || "Error al registrarse"
+          showError(`Error al registrar usuario: ${authError.message}`)
+        }
+        return
+      }
+      
+      // Si el registro en Auth fue exitoso, crear registro en tabla usuarios
+      if (data.user) {
+        const { error: dbError } = await supabase
+          .from('usuarios')
+          .insert({
+            id: data.user.id,
+            email: registerData.email,
+            rol: 'free',
+            estado: 'activo'
+          })
+        
+        if (dbError) {
+          console.error('Error al crear registro en tabla usuarios:', dbError)
+          // Aunque falle la inserción en usuarios, el registro en Auth fue exitoso
+          // Mostrar mensaje de éxito pero con advertencia
+          setSuccessMessage('¡Cuenta creada exitosamente! 📧 IMPORTANTE: Hemos enviado un email de activación a tu correo electrónico. Debes hacer clic en el enlace del email para activar tu cuenta antes de poder iniciar sesión. Revisa también tu carpeta de spam si no lo encuentras.')
+        } else {
+          setSuccessMessage('¡Cuenta creada exitosamente! 📧 IMPORTANTE: Hemos enviado un email de activación a tu correo electrónico. Debes hacer clic en el enlace del email para activar tu cuenta antes de poder iniciar sesión. Revisa también tu carpeta de spam si no lo encuentras.')
         }
         
-        showErrorAlert(errorMessage)
-        clearRegisterForm()
-      } else {
-        setSuccessMessage("¡Registro exitoso! Revisa tu email para confirmar tu cuenta.")
-        clearRegisterForm()
+        // Limpiar formulario
+        setRegisterData({
+          email: '',
+          password: '',
+          confirmPassword: ''
+        })
       }
     } catch (error) {
-      showErrorAlert("Error inesperado al registrarse")
-      clearRegisterForm()
+      console.error('Error inesperado en registro:', error)
+      showError('Error inesperado al registrar usuario')
     } finally {
       setIsLoading(false)
     }
   }
 
+  // Manejar recuperación de contraseña
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault()
-    setErrors({})
-    setSuccessMessage("")
+    clearMessages()
     
     if (!forgotPasswordData.email) {
-      setErrors({ email: "El email es requerido" })
+      setErrors({ email: 'El email es requerido' })
       return
     }
     
     if (!validateEmail(forgotPasswordData.email)) {
-      setErrors({ email: "Ingresa un email válido" })
+      setErrors({ email: 'Ingresa un email válido' })
       return
     }
     
@@ -195,15 +210,13 @@ export function LoginPage() {
       const { error } = await resetPassword(forgotPasswordData.email)
       
       if (error) {
-        showErrorAlert(error.message || "Error al enviar email de recuperación")
-        clearForgotPasswordForm()
+        showError(`Error al enviar email de recuperación: ${error.message}`)
       } else {
-        setSuccessMessage("¡Email de recuperación enviado! Revisa tu bandeja de entrada.")
-        clearForgotPasswordForm()
+        setSuccessMessage('Se ha enviado un email con instrucciones para recuperar tu contraseña.')
+        setForgotPasswordData({ email: '' })
       }
     } catch (error) {
-      showErrorAlert("Error inesperado al enviar email de recuperación")
-      clearForgotPasswordForm()
+      showError('Error inesperado al enviar email de recuperación')
     } finally {
       setIsLoading(false)
     }
@@ -303,7 +316,117 @@ export function LoginPage() {
                   </form>
                 </TabsContent>
 
-                {/* Resto de las pestañas... */}
+                {/* Pestaña de Registro */}
+                <TabsContent value="register" className="space-y-4 mt-4">
+                  <form onSubmit={handleRegister} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="register-email">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input
+                          id="register-email"
+                          type="email"
+                          placeholder="tu@email.com"
+                          className="pl-10"
+                          value={registerData.email}
+                          onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
+                        />
+                      </div>
+                      {errors.email && (
+                        <p className="text-sm text-red-600">{errors.email}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="register-password">Contraseña</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input
+                          id="register-password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Mínimo 6 caracteres"
+                          className="pl-10 pr-10"
+                          value={registerData.password}
+                          onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
+                        />
+                        <button
+                          type="button"
+                          className="absolute right-3 top-3 h-4 w-4 text-gray-400 hover:text-gray-600"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                      {errors.password && (
+                        <p className="text-sm text-red-600">{errors.password}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="register-confirm-password">Confirmar Contraseña</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input
+                          id="register-confirm-password"
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="Confirma tu contraseña"
+                          className="pl-10 pr-10"
+                          value={registerData.confirmPassword}
+                          onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value})}
+                        />
+                        <button
+                          type="button"
+                          className="absolute right-3 top-3 h-4 w-4 text-gray-400 hover:text-gray-600"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                      {errors.confirmPassword && (
+                        <p className="text-sm text-red-600">{errors.confirmPassword}</p>
+                      )}
+                    </div>
+
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-green-600 hover:bg-green-700"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "Registrando..." : "Crear Cuenta"}
+                    </Button>
+                  </form>
+                </TabsContent>
+
+                {/* Pestaña de Recuperar Contraseña */}
+                <TabsContent value="forgot" className="space-y-4 mt-4">
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="forgot-email">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input
+                          id="forgot-email"
+                          type="email"
+                          placeholder="tu@email.com"
+                          className="pl-10"
+                          value={forgotPasswordData.email}
+                          onChange={(e) => setForgotPasswordData({...forgotPasswordData, email: e.target.value})}
+                        />
+                      </div>
+                      {errors.email && (
+                        <p className="text-sm text-red-600">{errors.email}</p>
+                      )}
+                    </div>
+
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-orange-600 hover:bg-orange-700"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "Enviando..." : "Enviar Email de Recuperación"}
+                    </Button>
+                  </form>
+                </TabsContent>
                 {/* ... existing code for register and forgot password tabs ... */}
               </Tabs>
             </CardContent>
