@@ -7,7 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { UserPlus, Save, Upload, Trash2, Edit, Loader2 } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { UserPlus, Save, Trash, Trash2, Edit, Loader2 } from "lucide-react"
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from 'sonner'
@@ -20,9 +21,26 @@ interface EncartadosSectionProps {
 }
 
 interface FormData {
+  // Campos para Atestados
   numero: string
   delito: string
   juzgado: string
+  // Campos para Personas
+  nombre: string
+  apellido1: string
+  apellido2: string
+  documento: string
+  fecha_nacimiento: string
+  nacimiento_lugar: string
+  direccion: string
+  telefono: string
+  relacion: string
+  // Campos para Letrados
+  nombreLetrado: string
+  apellidosLetrado: string
+  colegio: string
+  numeroColegial: string
+  telefonoLetrado: string
 }
 
 interface Entidad {
@@ -34,10 +52,8 @@ interface Entidad {
   usuario: string
 }
 
-// Añadir interfaz para los datos del usuario
 interface UserData {
   codigo_unidad: string
-  // otros campos si son necesarios
 }
 
 export function EncartadosSection({ 
@@ -46,21 +62,40 @@ export function EncartadosSection({
   showActions = true,
   className = ""
 }: EncartadosSectionProps) {
+  const { user } = useAuth()
+  const [entidades, setEntidades] = useState<Entidad[]>([])
+  const [isLoadingEntidades, setIsLoadingEntidades] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [isLoadingEntidades, setIsLoadingEntidades] = useState(true)
-  const [entidades, setEntidades] = useState<Entidad[]>([])
   const [editingEntidad, setEditingEntidad] = useState<Entidad | null>(null)
   const [deletingEntidad, setDeletingEntidad] = useState<Entidad | null>(null)
+  const [isDeletingAll, setIsDeletingAll] = useState(false)
   const [userData, setUserData] = useState<UserData | null>(null)
+  const [activeTab, setActiveTab] = useState<'personas' | 'letrados' | 'atestados'>('atestados')
+  
   const [formData, setFormData] = useState<FormData>({
+    // Atestados
     numero: '',
     delito: '',
-    juzgado: ''
+    juzgado: '',
+    // Personas
+    nombre: '',
+    apellido1: '',
+    apellido2: '',
+    documento: '',
+    fecha_nacimiento: '',
+    nacimiento_lugar: '',
+    direccion: '',
+    telefono: '',
+    relacion: '',
+    // Letrados
+    nombreLetrado: '',
+    apellidosLetrado: '',
+    colegio: '',
+    numeroColegial: '',
+    telefonoLetrado: ''
   })
-  const { user } = useAuth()
 
-  // Cargar datos del usuario y entidades al montar el componente
   useEffect(() => {
     if (user) {
       loadUserData()
@@ -68,46 +103,30 @@ export function EncartadosSection({
     }
   }, [user])
 
-  // Actualizar el valor inicial del número cuando se cargan los datos del usuario
-  useEffect(() => {
-    if (userData?.codigo_unidad && !editingEntidad) {
-      const currentYear = new Date().getFullYear()
-      const initialNumero = `${currentYear}-${userData.codigo_unidad}`
-      setFormData(prev => ({
-        ...prev,
-        numero: initialNumero
-      }))
-    }
-  }, [userData, editingEntidad])
-
   const loadUserData = async () => {
     if (!user) return
-    
+
     try {
       const { data, error } = await supabase
-        .from('datos')
+        .from('usuarios')
         .select('codigo_unidad')
-        .eq('usuario', user.id)
+        .eq('id', user.id)
         .single()
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error al cargar datos del usuario:', error)
         return
       }
 
-      if (data) {
-        setUserData({
-          codigo_unidad: data.codigo_unidad || ''
-        })
-      }
+      setUserData(data)
     } catch (error) {
-      console.error('Error inesperado al cargar datos del usuario:', error)
+      console.error('Error inesperado:', error)
     }
   }
 
   const loadEntidades = async () => {
     if (!user) return
-    
+
     setIsLoadingEntidades(true)
     try {
       const { data, error } = await supabase
@@ -144,56 +163,95 @@ export function EncartadosSection({
       return
     }
 
-    // Validación básica
-    if (!formData.numero.trim() || !formData.delito.trim() || !formData.juzgado.trim()) {
-      toast.error('Todos los campos son obligatorios')
+    // Validación básica según la pestaña activa
+    let isValid = false
+    if (activeTab === 'atestados') {
+      isValid = formData.numero.trim() && formData.delito.trim() && formData.juzgado.trim()
+    } else if (activeTab === 'personas') {
+      isValid = formData.nombre.trim() && formData.apellido1.trim() && formData.documento.trim()
+    } else if (activeTab === 'letrados') {
+      isValid = formData.nombreLetrado.trim() && formData.apellidosLetrado.trim() && formData.colegio.trim()
+    }
+    
+    if (!isValid) {
+      toast.error('Todos los campos obligatorios deben estar completos')
       return
     }
 
     setIsLoading(true)
 
     try {
-      if (editingEntidad) {
-        // Actualizar entidad existente
+      if (activeTab === 'personas') {
+        // Guardar en tabla entidades_personas
         const { error } = await supabase
-          .from('entidades_dgs')
-          .update({
-            numero: formData.numero.trim(),
-            delito: formData.delito.trim(),
-            juzgado: formData.juzgado.trim()
-          })
-          .eq('id', editingEntidad.id)
-          .eq('usuario', user.id) // Seguridad adicional
-
-        if (error) {
-          console.error('Error al actualizar:', error)
-          toast.error('Error al actualizar la entidad')
-          return
-        }
-
-        toast.success('Entidad actualizada correctamente')
-      } else {
-        // Crear nueva entidad
-        const { error } = await supabase
-          .from('entidades_dgs')
+          .from('entidades_personas')
           .insert({
-            numero: formData.numero.trim(),
-            delito: formData.delito.trim(),
-            juzgado: formData.juzgado.trim(),
+            nombre: formData.nombre.trim(),
+            apellido1: formData.apellido1.trim(),
+            apellido2: formData.apellido2.trim(),
+            documento: formData.documento.trim(),
+            fecha_nacimiento: formData.fecha_nacimiento || null,
+            nacimiento_lugar: formData.nacimiento_lugar.trim() || null,
+            direccion: formData.direccion.trim() || null,
+            telefono: formData.telefono.trim() || null,
+            relacion: formData.relacion || null,
             usuario: user.id
           })
 
         if (error) {
-          console.error('Error al guardar:', error)
-          toast.error('Error al guardar los datos')
+          console.error('Error al guardar persona:', error)
+          toast.error('Error al guardar los datos de la persona')
           return
         }
 
-        toast.success('Entidad guardada correctamente')
+        toast.success('Persona guardada correctamente')
+      } else if (activeTab === 'atestados') {
+        if (editingEntidad) {
+          // Actualizar entidad existente
+          const { error } = await supabase
+            .from('entidades_dgs')
+            .update({
+              numero: formData.numero.trim(),
+              delito: formData.delito.trim(),
+              juzgado: formData.juzgado.trim()
+            })
+            .eq('id', editingEntidad.id)
+            .eq('usuario', user.id) // Seguridad adicional
+
+          if (error) {
+            console.error('Error al actualizar:', error)
+            toast.error('Error al actualizar la entidad')
+            return
+          }
+
+          toast.success('Entidad actualizada correctamente')
+        } else {
+          // Crear nueva entidad
+          const { error } = await supabase
+            .from('entidades_dgs')
+            .insert({
+              numero: formData.numero.trim(),
+              delito: formData.delito.trim(),
+              juzgado: formData.juzgado.trim(),
+              usuario: user.id
+            })
+
+          if (error) {
+            console.error('Error al guardar:', error)
+            toast.error('Error al guardar los datos')
+            return
+          }
+
+          toast.success('Entidad guardada correctamente')
+        }
+      } else if (activeTab === 'letrados') {
+        // TODO: Implementar guardado en tabla entidades_letrados
+        toast.info('Funcionalidad de letrados pendiente de implementar')
+        return
       }
 
       setIsModalOpen(false)
-      setFormData({ numero: '', delito: '', juzgado: '' })
+      resetForm()
       setEditingEntidad(null)
       await loadEntidades() // Recargar la lista
       
@@ -241,15 +299,43 @@ export function EncartadosSection({
     }
   }
 
+  const handleDeleteAll = async () => {
+    if (!user) {
+      toast.error('Debes estar autenticado para eliminar datos')
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('entidades_dgs')
+        .delete()
+        .eq('usuario', user.id)
+
+      if (error) {
+        console.error('Error al eliminar todas las entidades:', error)
+        toast.error('Error al eliminar todas las entidades')
+        return
+      }
+
+      toast.success('Todas las entidades han sido eliminadas correctamente')
+      setIsDeletingAll(false)
+      await loadEntidades() // Recargar la lista
+      
+    } catch (error) {
+      console.error('Error inesperado:', error)
+      toast.error('Error inesperado al eliminar todas las entidades')
+    }
+  }
+
   const handleDiscard = () => {
-    setFormData({ numero: '', delito: '', juzgado: '' })
+    resetForm()
     setEditingEntidad(null)
     setIsModalOpen(false)
   }
 
   const handleAddNew = () => {
     setEditingEntidad(null)
-    setFormData({ numero: '', delito: '', juzgado: '' })
+    resetForm()
     setIsModalOpen(true)
   }
 
@@ -258,9 +344,26 @@ export function EncartadosSection({
     const initialNumero = userData?.codigo_unidad ? `${currentYear}-${userData.codigo_unidad}-` : ''
     
     setFormData({
+      // Atestados
       numero: initialNumero,
       delito: '',
-      juzgado: ''
+      juzgado: '',
+      // Personas
+      nombre: '',
+      apellido1: '',
+      apellido2: '',
+      documento: '',
+      fecha_nacimiento: '',
+      nacimiento_lugar: '',
+      direccion: '',
+      telefono: '',
+      relacion: '',
+      // Letrados
+      nombreLetrado: '',
+      apellidosLetrado: '',
+      colegio: '',
+      numeroColegial: '',
+      telefonoLetrado: ''
     })
     setEditingEntidad(null)
   }
@@ -283,24 +386,29 @@ export function EncartadosSection({
           <div className="flex items-start justify-between">
             <div>
               <CardTitle className="text-lg">Listado de Entidades</CardTitle>
-              <CardDescription className="mt-2">{description}</CardDescription>
+              <CardDescription className="mt-1">
+                {description}
+              </CardDescription>
             </div>
             {showActions && (
-              <div className="flex gap-2 flex-wrap">
-             
+              <div className="flex gap-2">
                 <Button 
                   onClick={handleOpenModal}
+                  size="sm"
                   className="flex items-center gap-2"
                 >
                   <UserPlus className="h-4 w-4" />
-                  Añadir Entidad
+                  Añadir
                 </Button>
-       
-                <Button variant="outline" size="sm">
-                  <Save className="h-4 w-4 mr-2" /> Guardar
-                </Button>
-                <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10">
-                  <Trash2 className="h-4 w-4 mr-2" /> Borrar
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  className="flex items-center gap-2"
+                  onClick={() => setIsDeletingAll(true)}
+                  disabled={entidades.length === 0}
+                >
+                  <Trash className="h-4 w-4" />
+                  Borrar Todo
                 </Button>
               </div>
             )}
@@ -309,45 +417,42 @@ export function EncartadosSection({
         <CardContent>
           <div className="space-y-4">
             {isLoadingEntidades ? (
-              <div className="text-center text-muted-foreground py-8">
-                <Loader2 className="h-12 w-12 mx-auto mb-4 opacity-50 animate-spin" />
-                <p>Cargando entidades...</p>
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="ml-2">Cargando entidades...</span>
               </div>
             ) : entidades.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                <UserPlus className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No hay entidades relacionadas</p>    
-                <p className="text-sm">Haz clic en "Añadir" para comenzar</p>
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No hay entidades registradas</p>
+                <p className="text-sm mt-1">Haz clic en "Añadir" para crear la primera entidad</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {entidades.map((entidad) => (
                   <div key={entidad.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-4">
-                        <div>
-                          <p className="font-medium">{entidad.numero}</p>
-                          <p className="text-sm text-muted-foreground">{entidad.delito}</p>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          <p><span className="font-medium">Juzgado:</span> {entidad.juzgado}</p>
-                          <p><span className="font-medium">Creado:</span> {new Date(entidad.created_at).toLocaleDateString('es-ES')}</p>
-                        </div>
+                    <div className="flex-1">
+                      <div className="font-medium">{entidad.numero}</div>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        <span className="font-medium">Delito:</span> {entidad.delito}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        <span className="font-medium">Juzgado:</span> {entidad.juzgado}
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleEdit(entidad)}
+                        className="h-8 w-8 p-0"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="text-destructive hover:bg-destructive/10"
                         onClick={() => setDeletingEntidad(entidad)}
+                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -362,9 +467,9 @@ export function EncartadosSection({
 
       {/* Modal para añadir/editar entidad */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>
+        <DialogContent className="sm:max-w-[800px] w-full mx-auto flex flex-col items-center">
+          <DialogHeader className="text-center w-full">
+            <DialogTitle className="text-center">
               {editingEntidad ? 'Editar Entidad' : 'Añadir Nueva Entidad'}
             </DialogTitle>
             <DialogDescription>
@@ -374,74 +479,289 @@ export function EncartadosSection({
               }
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="numero" className="text-right">
-                Núm. DGS
-              </Label>
-              <Input
-                id="numero"
-                value={formData.numero}
-                onChange={(e) => handleInputChange('numero', e.target.value)}
-                className="col-span-3"
-                placeholder="Ej: 2025-1353-568"
-                onFocus={(e) => {
-                  // Evitar la selección automática del texto
-                  e.target.setSelectionRange(e.target.value.length, e.target.value.length)
-                }}
-              />
+          <div className="grid gap-4 py-4 w-full max-w-md mx-auto">
+            {/* Campos para Atestados */}
+            {activeTab === 'atestados' && (
+              <>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="numero" className="text-right">
+                    Núm. DGS *
+                  </Label>
+                  <Input
+                    id="numero"
+                    value={formData.numero}
+                    onChange={(e) => handleInputChange('numero', e.target.value)}
+                    className="col-span-3"
+                    placeholder="Ej: 2025-1353-568"
+                    onFocus={(e) => {
+                      e.target.setSelectionRange(e.target.value.length, e.target.value.length)
+                    }}
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="delito" className="text-right">
+                    Delito *
+                  </Label>
+                  <Input
+                    id="delito"
+                    value={formData.delito}
+                    onChange={(e) => handleInputChange('delito', e.target.value)}
+                    className="col-span-3"
+                    placeholder="Ej: Robo con fuerza"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="juzgado" className="text-right">
+                    Juzgado *
+                  </Label>
+                  <Input
+                    id="juzgado"
+                    value={formData.juzgado}
+                    onChange={(e) => handleInputChange('juzgado', e.target.value)}
+                    className="col-span-3"
+                    placeholder="Ej: Juzgado de Instrucción Nº 1"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Campos para Personas */}
+             {activeTab === 'personas' && (
+               <>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                   <Label htmlFor="nombre" className="text-right">
+                     Nombre *
+                   </Label>
+                   <Input
+                     id="nombre"
+                     value={formData.nombre}
+                     onChange={(e) => handleInputChange('nombre', e.target.value)}
+                     className="col-span-3"
+                     placeholder="Ej: Juan"
+                   />
+                 </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                   <Label htmlFor="apellido1" className="text-right">
+                     Primer Apellido *
+                   </Label>
+                   <Input
+                     id="apellido1"
+                     value={formData.apellido1}
+                     onChange={(e) => handleInputChange('apellido1', e.target.value)}
+                     className="col-span-3"
+                     placeholder="Ej: García"
+                   />
+                 </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                   <Label htmlFor="apellido2" className="text-right">
+                     Segundo Apellido
+                   </Label>
+                   <Input
+                     id="apellido2"
+                     value={formData.apellido2}
+                     onChange={(e) => handleInputChange('apellido2', e.target.value)}
+                     className="col-span-3"
+                     placeholder="Ej: López"
+                   />
+                 </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                   <Label htmlFor="documento" className="text-right">
+                     Documento *
+                   </Label>
+                   <Input
+                     id="documento"
+                     value={formData.documento}
+                     onChange={(e) => handleInputChange('documento', e.target.value)}
+                     className="col-span-3"
+                     placeholder="Ej: 12345678A"
+                   />
+                 </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                   <Label htmlFor="fecha_nacimiento" className="text-right">
+                     Fecha Nacimiento
+                   </Label>
+                   <Input
+                     id="fecha_nacimiento"
+                     type="date"
+                     value={formData.fecha_nacimiento}
+                     onChange={(e) => handleInputChange('fecha_nacimiento', e.target.value)}
+                     className="col-span-3"
+                   />
+                 </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                   <Label htmlFor="nacimiento_lugar" className="text-right">
+                     Lugar Nacimiento
+                   </Label>
+                   <Input
+                     id="nacimiento_lugar"
+                     value={formData.nacimiento_lugar}
+                     onChange={(e) => handleInputChange('nacimiento_lugar', e.target.value)}
+                     className="col-span-3"
+                     placeholder="Ej: Madrid, España"
+                   />
+                 </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                   <Label htmlFor="direccion" className="text-right">
+                     Dirección
+                   </Label>
+                   <Input
+                     id="direccion"
+                     value={formData.direccion}
+                     onChange={(e) => handleInputChange('direccion', e.target.value)}
+                     className="col-span-3"
+                     placeholder="Ej: Calle Mayor, 123"
+                   />
+                 </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                   <Label htmlFor="telefono" className="text-right">
+                     Teléfono
+                   </Label>
+                   <Input
+                     id="telefono"
+                     value={formData.telefono}
+                     onChange={(e) => handleInputChange('telefono', e.target.value)}
+                     className="col-span-3"
+                     placeholder="Ej: 666 123 456"
+                   />
+                 </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                   <Label htmlFor="relacion" className="text-right">
+                     Relación
+                   </Label>
+                   <Select value={formData.relacion} onValueChange={(value) => handleInputChange('relacion', value)}>
+                     <SelectTrigger className="col-span-3">
+                       <SelectValue placeholder="Seleccionar relación" />
+                     </SelectTrigger>
+                     <SelectContent>
+                       <SelectItem value="Denunciante">Denunciante</SelectItem>
+                       <SelectItem value="Denunciado">Denunciado</SelectItem>
+                       <SelectItem value="Detenido">Detenido</SelectItem>
+                       <SelectItem value="Investigado">Investigado</SelectItem>
+                       <SelectItem value="Testigo">Testigo</SelectItem>
+                     </SelectContent>
+                   </Select>
+                 </div>
+               </>
+             )}
+
+            {/* Campos para Letrados */}
+            {activeTab === 'letrados' && (
+              <>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="nombreLetrado" className="text-right">
+                    Nombre *
+                  </Label>
+                  <Input
+                    id="nombreLetrado"
+                    value={formData.nombreLetrado}
+                    onChange={(e) => handleInputChange('nombreLetrado', e.target.value)}
+                    className="col-span-3"
+                    placeholder="Ej: María"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="apellidosLetrado" className="text-right">
+                    Apellidos *
+                  </Label>
+                  <Input
+                    id="apellidosLetrado"
+                    value={formData.apellidosLetrado}
+                    onChange={(e) => handleInputChange('apellidosLetrado', e.target.value)}
+                    className="col-span-3"
+                    placeholder="Ej: Rodríguez Martín"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="colegio" className="text-right">
+                    Colegio *
+                  </Label>
+                  <Input
+                    id="colegio"
+                    value={formData.colegio}
+                    onChange={(e) => handleInputChange('colegio', e.target.value)}
+                    className="col-span-3"
+                    placeholder="Ej: Colegio de Abogados de Madrid"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="numeroColegial" className="text-right">
+                    Nº Colegial
+                  </Label>
+                  <Input
+                    id="numeroColegial"
+                    value={formData.numeroColegial}
+                    onChange={(e) => handleInputChange('numeroColegial', e.target.value)}
+                    className="col-span-3"
+                    placeholder="Ej: 12345"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="telefonoLetrado" className="text-right">
+                    Teléfono
+                  </Label>
+                  <Input
+                    id="telefonoLetrado"
+                    value={formData.telefonoLetrado}
+                    onChange={(e) => handleInputChange('telefonoLetrado', e.target.value)}
+                    className="col-span-3"
+                    placeholder="Ej: 91 123 45 67"
+                  />
+                </div>
+              </>
+            )}
+            
+            {/* Botones Descartar y Guardar centrados */}
+            <div className="flex justify-center gap-4 mt-6">
+              <Button 
+                variant="outline" 
+                onClick={handleDiscard}
+                disabled={isLoading}
+              >
+                Descartar
+              </Button>
+              <Button 
+                onClick={handleSave}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Guardando...' : (editingEntidad ? 'Actualizar' : 'Guardar')}
+              </Button>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="delito" className="text-right">
-                Delito
-              </Label>
-              <Input
-                id="delito"
-                value={formData.delito}
-                onChange={(e) => handleInputChange('delito', e.target.value)}
-                className="col-span-3"
-                placeholder="Ej: Robo con fuerza"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="juzgado" className="text-right">
-                Juzgado
-              </Label>
-              <Input
-                id="juzgado"
-                value={formData.juzgado}
-                onChange={(e) => handleInputChange('juzgado', e.target.value)}
-                className="col-span-3"
-                placeholder="Ej: Juzgado de Instrucción Nº 1"
-              />
+            
+            {/* Pestañas para cambiar entre tipos de formulario */}
+            <div className="flex justify-center gap-2 mt-8 pt-6 border-t">
+              <Button 
+                variant={activeTab === 'personas' ? 'default' : 'secondary'}
+                size="sm"
+                onClick={() => setActiveTab('personas')}
+              >
+                Personas
+              </Button>
+              <Button 
+                variant={activeTab === 'letrados' ? 'default' : 'secondary'}
+                size="sm"
+                onClick={() => setActiveTab('letrados')}
+              >
+                Letrados
+              </Button>
+              <Button 
+                variant={activeTab === 'atestados' ? 'default' : 'secondary'}
+                size="sm"
+                onClick={() => setActiveTab('atestados')}
+              >
+                Atestados
+              </Button>
             </div>
           </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={handleDiscard}
-              disabled={isLoading}
-            >
-              Descartar
-            </Button>
-            <Button 
-              onClick={handleSave}
-              disabled={isLoading}
-            >
-              {isLoading ? 'Guardando...' : (editingEntidad ? 'Actualizar' : 'Guardar')}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de confirmación para eliminar */}
+      {/* Dialog de confirmación para eliminar una entidad */}
       <AlertDialog open={!!deletingEntidad} onOpenChange={() => setDeletingEntidad(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará permanentemente la entidad 
-              <strong>"{deletingEntidad?.numero}"</strong> de la base de datos.
+              Esta acción no se puede deshacer. Se eliminará permanentemente la entidad "{deletingEntidad?.numero}".
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -451,6 +771,44 @@ export function EncartadosSection({
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog de confirmación para eliminar todas las entidades */}
+      <AlertDialog open={isDeletingAll} onOpenChange={setIsDeletingAll}>
+        <AlertDialogContent className="sm:max-w-[500px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash className="h-5 w-5" />
+              ⚠️ Eliminar Todas las Entidades
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <p className="font-semibold text-destructive mb-2">
+                  Esta acción es irreversible y eliminará:
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li><strong>{entidades.length}</strong> entidades registradas</li>
+                  <li>Todos los datos asociados (números DGS, delitos, juzgados)</li>
+                  <li>El historial completo de entidades</li>
+                </ul>
+              </div>
+              <p className="text-center font-medium">
+                ¿Estás completamente seguro de que deseas continuar?
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-3">
+            <AlertDialogCancel className="flex-1">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteAll}
+              className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90 font-semibold"
+            >
+              Sí, Eliminar Todo
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

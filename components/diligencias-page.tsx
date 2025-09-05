@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { diligenciasData, type DiligenciaData } from "@/app/diligencias/diligencias-data"
+import { EncartadosSection } from "@/components/encartados-section"
 
 interface DiligenciasPageProps {
   className?: string
@@ -176,6 +177,9 @@ export function DiligenciasPage({ className }: DiligenciasPageProps) {
           </div>
         )}
       </div>
+      
+      {/* Sección de Entidades Relacionadas */}
+      <EncartadosSection />
     </div>
   )
 }
