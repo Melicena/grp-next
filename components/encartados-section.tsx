@@ -65,11 +65,11 @@ interface Entidad {
   telefono?: string
   relacion?: string
   // Campos para Letrados
-  nombreLetradoNuevo?: string
-  numeroLetrado?: string
-  telefonoLetradoNuevo?: string
+  nombre?: string
+  numero?: string
+  telefono?: string
   usuarioLetrado?: string
-  atestadoLetrado?: string
+  atestado?: string
 }
 
 interface UserData {
@@ -365,10 +365,10 @@ export function EncartadosSection({
           const { error } = await supabase
             .from('entidades_letrados')
             .update({
-              nombreLetradoNuevo: formData.nombre.trim(),
-              numeroLetrado: formData.numero.trim(),
-              telefonoLetradoNuevo: formData.telefono.trim() || null,
-              atestadoLetrado: formData.atestado.trim() || null
+              nombre: formData.nombre.trim(),
+              numero: formData.numero.trim(),
+              telefono: formData.telefono.trim() || null,
+              atestado: formData.atestado.trim() || null
             })
             .eq('id', editingEntidad.id)
             .eq('usuario', user.id) // Seguridad adicional
@@ -385,10 +385,10 @@ export function EncartadosSection({
           const { error } = await supabase
             .from('entidades_letrados')
             .insert({
-              nombreLetradoNuevo: formData.nombre.trim(),
-              numeroLetrado: formData.numero.trim(),
-              telefonoLetradoNuevo: formData.telefono.trim() || null,
-              atestadoLetrado: formData.atestado.trim() || null,
+              nombre: formData.nombre.trim(),
+              numero: formData.numero.trim(),
+              telefono: formData.telefono.trim() || null,
+              atestado: formData.atestado.trim() || null,
               usuario: user.id
             })
 
@@ -484,10 +484,10 @@ export function EncartadosSection({
         telefono: '',
         relacion: '',
         // Letrados
-        nombre: entidad.nombreLetradoNuevo || '',
-        numero: entidad.numeroLetrado || '',
-        telefono: entidad.telefonoLetradoNuevo || '',
-        atestado: entidad.atestadoLetrado || ''
+        nombre: entidad.nombre || '',
+        numero: entidad.numero || '',
+        telefono: entidad.telefono || '',
+        atestado: entidad.atestado || ''
       })
     }
     
@@ -737,18 +737,18 @@ export function EncartadosSection({
                               Letrado
                             </span>
                             <div className="font-medium">
-                              {entidad.nombreLetradoNuevo} {entidad.numeroLetrado}
+                              {entidad.nombre} {entidad.numero}
                             </div>
                           </div>
                           <div className="text-sm text-muted-foreground mt-1">
-                            <span className="font-medium">Teléfono:</span> {entidad.telefonoLetradoNuevo}
+                            <span className="font-medium">Teléfono:</span> {entidad.telefono}
                           </div>
 
-                          {entidad.atestadoLetrado && (
-                            <div className="text-sm text-muted-foreground">
-                              <span className="font-medium">Atestado:</span> {entidad.atestadoLetrado}
-                            </div>
-                          )}
+                          {entidad.atestado && (
+                             <div className="text-sm text-muted-foreground">
+                               <span className="font-medium">Atestado:</span> {entidad.atestado}
+                             </div>
+                           )}
                         </>
                       )}
                     </div>
@@ -1090,7 +1090,7 @@ export function EncartadosSection({
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará permanentemente {deletingEntidad?.tipo === 'atestado' ? `el atestado "${deletingEntidad?.numero}"` : deletingEntidad?.tipo === 'persona' ? `la persona "${deletingEntidad?.nombre} ${deletingEntidad?.apellido1}"` : deletingEntidad?.tipo === 'letrado' ? `el letrado "${deletingEntidad?.nombreLetradoNuevo} ${deletingEntidad?.numeroLetrado}"` : 'esta entidad'}.
+              Esta acción no se puede deshacer. Se eliminará permanentemente {deletingEntidad?.tipo === 'atestado' ? `el atestado "${deletingEntidad?.numero}"` : deletingEntidad?.tipo === 'persona' ? `la persona "${deletingEntidad?.nombre} ${deletingEntidad?.apellido1}"` : deletingEntidad?.tipo === 'letrado' ? `el letrado "${deletingEntidad?.nombre} ${deletingEntidad?.numero}"` : 'esta entidad'}.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
