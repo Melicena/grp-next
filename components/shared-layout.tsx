@@ -81,7 +81,7 @@ export function SharedLayout({ children }: SharedLayoutProps) {
             <div className="flex items-center gap-3">
               <Shield className="h-8 w-8 text-primary" />
               <div>
-                <h1 className="text-xl font-bold text-sidebar-foreground">GPR - Sistema Policial</h1>
+                <h1 className="text-xl font-bold text-sidebar-foreground">Gesrepol - Sistema Policial</h1>
                 <p className="text-sm text-sidebar-foreground/70">Gestión y Procedimientos</p>
               </div>
             </div>

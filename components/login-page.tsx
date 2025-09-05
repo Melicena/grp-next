@@ -218,10 +218,10 @@ export function LoginPage() {
               <Shield className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Sistema GPR
+              Gesrepol
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Gestión Policial y Reportes
+              Gestion de recursos policiales para Guardias Civiles.
             </p>
           </div>
 

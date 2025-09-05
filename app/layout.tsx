@@ -9,8 +9,8 @@ import { Toaster } from 'sonner'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'GPR Next',
-  description: 'Sistema de gestión policial',
+  title: 'Gesrepol.- Gestion de recursos policiales para Guardias Civiles.',
+  description: 'Sistema de gestión de recursos policiales para Guardias Civiles.',
 }
 
 export default function RootLayout({
