@@ -22,25 +22,25 @@ interface EncartadosSectionProps {
 
 interface FormData {
   // Campos para Atestados
-  numero: string
+  atestado_numero: string
   delito: string
   juzgado: string
   // Campos para Personas
-  atestado: string
-  nombre: string
+  persona_atestado: string
+  persona_nombre: string
   apellido1: string
   apellido2: string
   documento: string
   fecha_nacimiento: string
   nacimiento_lugar: string
-  direccion: string
-  telefono: string
+  persona_direccion: string
+  persona_telefono: string
   relacion: string
   // Campos para Letrados
-  nombre: string
-  numero: string
-  telefono: string
-  atestado: string
+  letrado_nombre: string
+  letrado_numero: string
+  letrado_telefono: string
+  letrado_atestado: string
 }
 
 interface Entidad {
@@ -92,7 +92,9 @@ export function EncartadosSection({
   const [isDeletingAll, setIsDeletingAll] = useState(false)
   const [userData, setUserData] = useState<UserData | null>(null)
   const [activeTab, setActiveTab] = useState<'personas' | 'letrados' | 'atestados'>('atestados')
-  const [atestadosDisponibles, setAtestadosDisponibles] = useState<{id: number, numero: string}[]>([])
+  const [atestadosDisponibles, setAtestadosDisponibles] = useState<{id: number, numero: string}[]>([])  
+  const [filtroTexto, setFiltroTexto] = useState('')
+  const [entidadesSeleccionadas, setEntidadesSeleccionadas] = useState<Set<string>>(new Set())
   
   const [formData, setFormData] = useState<FormData>({
     // Atestados
@@ -252,11 +254,11 @@ export function EncartadosSection({
     // Validación básica según la pestaña activa
     let isValid = false
     if (activeTab === 'atestados') {
-      isValid = formData.numero.trim() && formData.delito.trim() && formData.juzgado.trim()
+      isValid = formData.atestado_numero.trim() && formData.delito.trim() && formData.juzgado.trim()
     } else if (activeTab === 'personas') {
-      isValid = formData.nombre.trim() && formData.apellido1.trim() && formData.documento.trim()
+      isValid = formData.persona_nombre.trim() && formData.apellido1.trim() && formData.documento.trim()
     } else if (activeTab === 'letrados') {
-      isValid = formData.nombre.trim() && formData.numero.trim()
+      isValid = formData.letrado_nombre.trim() && formData.letrado_numero.trim()
     }
     
     if (!isValid) {
@@ -273,15 +275,15 @@ export function EncartadosSection({
           const { error } = await supabase
             .from('entidades_personas')
             .update({
-              atestado: formData.atestado.trim() || null,
-              nombre: formData.nombre.trim(),
+              atestado: formData.persona_atestado.trim() || null,
+              nombre: formData.persona_nombre.trim(),
               apellido1: formData.apellido1.trim(),
               apellido2: formData.apellido2.trim(),
               documento: formData.documento.trim(),
               fecha_nacimiento: formData.fecha_nacimiento || null,
               nacimiento_lugar: formData.nacimiento_lugar.trim() || null,
-              direccion: formData.direccion.trim() || null,
-              telefono: formData.telefono.trim() || null,
+              direccion: formData.persona_direccion.trim() || null,
+              telefono: formData.persona_telefono.trim() || null,
               relacion: formData.relacion || null
             })
             .eq('id', editingEntidad.id)
@@ -299,15 +301,15 @@ export function EncartadosSection({
           const { error } = await supabase
             .from('entidades_personas')
             .insert({
-              atestado: formData.atestado.trim() || null,
-              nombre: formData.nombre.trim(),
+              atestado: formData.persona_atestado.trim() || null,
+              nombre: formData.persona_nombre.trim(),
               apellido1: formData.apellido1.trim(),
               apellido2: formData.apellido2.trim(),
               documento: formData.documento.trim(),
               fecha_nacimiento: formData.fecha_nacimiento || null,
               nacimiento_lugar: formData.nacimiento_lugar.trim() || null,
-              direccion: formData.direccion.trim() || null,
-              telefono: formData.telefono.trim() || null,
+              direccion: formData.persona_direccion.trim() || null,
+              telefono: formData.persona_telefono.trim() || null,
               relacion: formData.relacion || null,
               usuario: user.id
             })
@@ -326,7 +328,7 @@ export function EncartadosSection({
           const { error } = await supabase
             .from('entidades_dgs')
             .update({
-              numero: formData.numero.trim(),
+              numero: formData.atestado_numero.trim(),
               delito: formData.delito.trim(),
               juzgado: formData.juzgado.trim()
             })
@@ -345,7 +347,7 @@ export function EncartadosSection({
           const { error } = await supabase
             .from('entidades_dgs')
             .insert({
-              numero: formData.numero.trim(),
+              numero: formData.atestado_numero.trim(),
               delito: formData.delito.trim(),
               juzgado: formData.juzgado.trim(),
               usuario: user.id
@@ -365,10 +367,10 @@ export function EncartadosSection({
           const { error } = await supabase
             .from('entidades_letrados')
             .update({
-              nombre: formData.nombre.trim(),
-              numero: formData.numero.trim(),
-              telefono: formData.telefono.trim() || null,
-              atestado: formData.atestado.trim() || null
+              nombre: formData.letrado_nombre.trim(),
+              numero: formData.letrado_numero.trim(),
+              telefono: formData.letrado_telefono.trim() || null,
+              atestado: formData.letrado_atestado.trim() || null
             })
             .eq('id', editingEntidad.id)
             .eq('usuario', user.id) // Seguridad adicional
@@ -385,10 +387,10 @@ export function EncartadosSection({
           const { error } = await supabase
             .from('entidades_letrados')
             .insert({
-              nombre: formData.nombre.trim(),
-              numero: formData.numero.trim(),
-              telefono: formData.telefono.trim() || null,
-              atestado: formData.atestado.trim() || null,
+              nombre: formData.letrado_nombre.trim(),
+              numero: formData.letrado_numero.trim(),
+              telefono: formData.letrado_telefono.trim() || null,
+              atestado: formData.letrado_atestado.trim() || null,
               usuario: user.id
             })
 
@@ -422,72 +424,74 @@ export function EncartadosSection({
     if (entidad.tipo === 'atestado') {
       setActiveTab('atestados')
       setFormData({
-        // Atestados
-        numero: entidad.numero || '',
+        // Atestados - solo llenar campos de atestado
+        atestado_numero: entidad.numero || '',
         delito: entidad.delito || '',
         juzgado: entidad.juzgado || '',
-        // Personas
-        nombre: '',
+        // Personas - campos vacíos
+        persona_atestado: '',
+        persona_nombre: '',
         apellido1: '',
         apellido2: '',
         documento: '',
         fecha_nacimiento: '',
         nacimiento_lugar: '',
-        direccion: '',
-        telefono: '',
+        persona_direccion: '',
+        persona_telefono: '',
         relacion: '',
-        // Letrados
-        nombre: '',
-        numero: '',
-        telefono: '',
-        atestado: ''
+        // Letrados - campos vacíos
+        letrado_nombre: '',
+        letrado_numero: '',
+        letrado_telefono: '',
+        letrado_atestado: ''
       })
     } else if (entidad.tipo === 'persona') {
       setActiveTab('personas')
       setFormData({
-        // Atestados
-        numero: '',
+        // Atestados - campos vacíos
+        atestado_numero: '',
         delito: '',
         juzgado: '',
-        // Personas
-        atestado: entidad.atestado || '',
-        nombre: entidad.nombre || '',
+        // Personas - solo llenar campos de persona
+        persona_atestado: entidad.atestado || '',
+        persona_nombre: entidad.nombre || '',
         apellido1: entidad.apellido1 || '',
         apellido2: entidad.apellido2 || '',
         documento: entidad.documento || '',
         fecha_nacimiento: entidad.fecha_nacimiento || '',
         nacimiento_lugar: entidad.nacimiento_lugar || '',
-        direccion: entidad.direccion || '',
-        telefono: entidad.telefono || '',
+        persona_direccion: entidad.direccion || '',
+        persona_telefono: entidad.telefono || '',
         relacion: entidad.relacion || '',
-        // Letrados
-        nombre: '',
-        numero: '',
-        telefono: '',
-        atestado: ''
+        // Letrados - campos vacíos
+        letrado_nombre: '',
+        letrado_numero: '',
+        letrado_telefono: '',
+        letrado_atestado: ''
       })
     } else if (entidad.tipo === 'letrado') {
       setActiveTab('letrados')
       setFormData({
-        // Atestados
-        numero: '',
+        // Atestados - campos vacíos
+        atestado_numero: '',
         delito: '',
         juzgado: '',
-        // Personas
-        nombre: '',
+        // Personas - campos vacíos
+        persona_atestado: '',
+        persona_nombre: '',
         apellido1: '',
         apellido2: '',
         documento: '',
         fecha_nacimiento: '',
         nacimiento_lugar: '',
-        direccion: '',
-        telefono: '',
+        persona_direccion: '',
+        persona_telefono: '',
         relacion: '',
-        // Letrados
-        nombre: entidad.nombre || '',
-        numero: entidad.numero || '',
-        telefono: entidad.telefono || '',
-        atestado: entidad.atestado || ''
+        // Letrados - solo llenar campos de letrado
+        letrado_nombre: entidad.nombre || '',
+        letrado_numero: entidad.numero || '',
+        letrado_telefono: entidad.telefono || '',
+        letrado_atestado: entidad.atestado || ''
       })
     }
     
@@ -597,25 +601,25 @@ export function EncartadosSection({
     
     setFormData({
       // Atestados
-      numero: initialNumero,
+      atestado_numero: initialNumero,
       delito: '',
       juzgado: '',
       // Personas
-      atestado: '',
-      nombre: '',
+      persona_atestado: '',
+      persona_nombre: '',
       apellido1: '',
       apellido2: '',
       documento: '',
       fecha_nacimiento: '',
       nacimiento_lugar: '',
-      direccion: '',
-      telefono: '',
+      persona_direccion: '',
+      persona_telefono: '',
       relacion: '',
       // Letrados
-      nombre: '',
-      numero: '',
-      telefono: '',
-      atestado: ''
+      letrado_nombre: '',
+      letrado_numero: '',
+      letrado_telefono: '',
+      letrado_atestado: ''
     })
     setEditingEntidad(null)
   }
@@ -629,6 +633,64 @@ export function EncartadosSection({
     resetForm()
     setIsModalOpen(false)
   }
+
+  // Función para filtrar y ordenar entidades
+  const entidadesFiltradas = entidades.filter(entidad => {
+    if (!filtroTexto.trim()) return true
+    
+    const textoFiltro = filtroTexto.toLowerCase()
+    
+    // Filtrar por diferentes campos según el tipo de entidad
+    if (entidad.tipo === 'atestado') {
+      return (
+        entidad.numero?.toLowerCase().includes(textoFiltro) ||
+        entidad.delito?.toLowerCase().includes(textoFiltro) ||
+        entidad.juzgado?.toLowerCase().includes(textoFiltro)
+      )
+    } else if (entidad.tipo === 'persona') {
+      return (
+        entidad.nombre?.toLowerCase().includes(textoFiltro) ||
+        entidad.apellido1?.toLowerCase().includes(textoFiltro) ||
+        entidad.apellido2?.toLowerCase().includes(textoFiltro) ||
+        entidad.documento?.toLowerCase().includes(textoFiltro) ||
+        entidad.atestado?.toLowerCase().includes(textoFiltro) ||
+        entidad.relacion?.toLowerCase().includes(textoFiltro)
+      )
+    } else if (entidad.tipo === 'letrado') {
+      return (
+        entidad.nombre?.toLowerCase().includes(textoFiltro) ||
+        entidad.numero?.toLowerCase().includes(textoFiltro) ||
+        entidad.telefono?.toLowerCase().includes(textoFiltro) ||
+        entidad.atestado?.toLowerCase().includes(textoFiltro)
+      )
+    }
+    
+    return false
+  }).sort((a, b) => {
+    // Ordenar: entidades seleccionadas primero
+    const aSeleccionada = entidadesSeleccionadas.has(`${a.tipo}-${a.id}`)
+    const bSeleccionada = entidadesSeleccionadas.has(`${b.tipo}-${b.id}`)
+    
+    if (aSeleccionada && !bSeleccionada) return -1
+    if (!aSeleccionada && bSeleccionada) return 1
+    
+    // Si ambas tienen el mismo estado de selección, mantener orden original
+    return 0
+  })
+
+  // Función para manejar la selección de entidades
+  const toggleSeleccionEntidad = (entidad: Entidad) => {
+    const entidadKey = `${entidad.tipo}-${entidad.id}`
+    const nuevasSeleccionadas = new Set(entidadesSeleccionadas)
+    
+    if (nuevasSeleccionadas.has(entidadKey)) {
+      nuevasSeleccionadas.delete(entidadKey)
+    } else {
+      nuevasSeleccionadas.add(entidadKey)
+    }
+    
+    setEntidadesSeleccionadas(nuevasSeleccionadas)
+  }
   
   return (
     <div className={`mt-8 ${className}`}>
@@ -636,9 +698,19 @@ export function EncartadosSection({
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between">
-            <div>
-              <CardTitle className="text-lg">Listado de Entidades</CardTitle>
-              <CardDescription className="mt-1">
+            <div className="flex-1">
+              <div className="flex items-center gap-4 mb-2">
+                <CardTitle className="text-lg">Listado de Entidades</CardTitle>
+                <div className="flex-1 max-w-sm">
+                  <Input
+                    placeholder="Filtrar entidades..."
+                    value={filtroTexto}
+                    onChange={(e) => setFiltroTexto(e.target.value)}
+                    className="h-8"
+                  />
+                </div>
+              </div>
+              <CardDescription>
                 {description}
               </CardDescription>
             </div>
@@ -678,9 +750,14 @@ export function EncartadosSection({
                 <p>No hay entidades registradas</p>
                 <p className="text-sm mt-1">Haz clic en "Añadir" para crear la primera entidad</p>
               </div>
+            ) : entidadesFiltradas.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No se encontraron entidades que coincidan con el filtro</p>
+                <p className="text-sm mt-1">Intenta con otros términos de búsqueda</p>
+              </div>
             ) : (
               <div className="space-y-3">
-                {entidades.map((entidad) => (
+                {entidadesFiltradas.map((entidad) => (
                   <div key={`${entidad.tipo}-${entidad.id}`} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex-1">
                       {/* Mostrar información según el tipo de entidad */}
@@ -720,7 +797,10 @@ export function EncartadosSection({
                           </div>
                           {entidad.relacion && (
                             <div className="text-sm text-muted-foreground">
-                              <span className="font-medium">Relación:</span> {entidad.relacion}
+                              <span className="font-medium">Relación:</span> 
+                              <span className="ml-1 px-2 py-1 bg-yellow-300 text-black font-semibold rounded-md shadow-sm">
+                                {entidad.relacion}
+                              </span>
                             </div>
                           )}
                           {entidad.telefono && (
@@ -753,6 +833,22 @@ export function EncartadosSection({
                       )}
                     </div>
                     <div className="flex items-center gap-2">
+                      <Button
+                        variant={entidadesSeleccionadas.has(`${entidad.tipo}-${entidad.id}`) ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => toggleSeleccionEntidad(entidad)}
+                        className={`h-8 w-8 p-0 transition-all duration-300 transform ${
+                          entidadesSeleccionadas.has(`${entidad.tipo}-${entidad.id}`) 
+                            ? "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white shadow-lg shadow-green-500/50 scale-105 border-0 animate-pulse" 
+                            : "hover:bg-gray-50 hover:scale-105 border-gray-300"
+                        }`}
+                      >
+                        <div className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                          entidadesSeleccionadas.has(`${entidad.tipo}-${entidad.id}`) 
+                            ? "bg-white shadow-inner animate-ping" 
+                            : "bg-gray-400"
+                        }`} />
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
@@ -797,13 +893,13 @@ export function EncartadosSection({
             {activeTab === 'atestados' && (
               <>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="numero" className="text-right">
-                    Núm. DGS *
+                  <Label htmlFor="atestado_numero" className="text-right">
+                    Número *
                   </Label>
                   <Input
-                    id="numero"
-                    value={formData.numero}
-                    onChange={(e) => handleInputChange('numero', e.target.value)}
+                    id="atestado_numero"
+                    value={formData.atestado_numero}
+                    onChange={(e) => handleInputChange('atestado_numero', e.target.value)}
                     className="col-span-3"
                     placeholder="Ej: 2025-1353-568"
                     onFocus={(e) => {
@@ -846,8 +942,8 @@ export function EncartadosSection({
                      Atestado
                    </Label>
                    <Select
-                     value={formData.atestado}
-                     onValueChange={(value) => handleInputChange('atestado', value)}
+                     value={formData.persona_atestado}
+                     onValueChange={(value) => handleInputChange('persona_atestado', value)}
                    >
                      <SelectTrigger className="col-span-3">
                        <SelectValue placeholder="Seleccionar atestado" />
@@ -866,9 +962,9 @@ export function EncartadosSection({
                      Nombre *
                    </Label>
                    <Input
-                     id="nombre"
-                     value={formData.nombre}
-                     onChange={(e) => handleInputChange('nombre', e.target.value)}
+                     id="persona_nombre"
+                     value={formData.persona_nombre}
+                     onChange={(e) => handleInputChange('persona_nombre', e.target.value)}
                      className="col-span-3"
                      placeholder="Ej: Juan"
                    />
@@ -938,9 +1034,9 @@ export function EncartadosSection({
                      Dirección
                    </Label>
                    <Input
-                     id="direccion"
-                     value={formData.direccion}
-                     onChange={(e) => handleInputChange('direccion', e.target.value)}
+                     id="persona_direccion"
+                     value={formData.persona_direccion}
+                     onChange={(e) => handleInputChange('persona_direccion', e.target.value)}
                      className="col-span-3"
                      placeholder="Ej: Calle Mayor, 123"
                    />
@@ -950,9 +1046,9 @@ export function EncartadosSection({
                      Teléfono
                    </Label>
                    <Input
-                     id="telefono"
-                     value={formData.telefono}
-                     onChange={(e) => handleInputChange('telefono', e.target.value)}
+                     id="persona_telefono"
+                     value={formData.persona_telefono}
+                     onChange={(e) => handleInputChange('persona_telefono', e.target.value)}
                      className="col-span-3"
                      placeholder="Ej: 666 123 456"
                    />
@@ -985,9 +1081,9 @@ export function EncartadosSection({
                     Nombre *
                   </Label>
                   <Input
-                    id="nombre"
-                    value={formData.nombre}
-                    onChange={(e) => handleInputChange('nombre', e.target.value)}
+                    id="letrado_nombre"
+                    value={formData.letrado_nombre}
+                    onChange={(e) => handleInputChange('letrado_nombre', e.target.value)}
                     className="col-span-3"
                     placeholder="Ej: Juan García"
                   />
@@ -997,9 +1093,9 @@ export function EncartadosSection({
                      Nº Colegiado *
                    </Label>
                   <Input
-                    id="numero"
-                    value={formData.numero}
-                    onChange={(e) => handleInputChange('numero', e.target.value)}
+                    id="letrado_numero"
+                    value={formData.letrado_numero}
+                    onChange={(e) => handleInputChange('letrado_numero', e.target.value)}
                     className="col-span-3"
                     placeholder="Ej: 12345"
                   />
@@ -1009,9 +1105,9 @@ export function EncartadosSection({
                     Teléfono
                   </Label>
                   <Input
-                    id="telefono"
-                    value={formData.telefono}
-                    onChange={(e) => handleInputChange('telefono', e.target.value)}
+                    id="letrado_telefono"
+                    value={formData.letrado_telefono}
+                    onChange={(e) => handleInputChange('letrado_telefono', e.target.value)}
                     className="col-span-3"
                     placeholder="Ej: 666 123 456"
                   />
@@ -1021,8 +1117,8 @@ export function EncartadosSection({
                     Atestado
                   </Label>
                   <Select
-                    value={formData.atestado}
-                    onValueChange={(value) => handleInputChange('atestado', value)}
+                    value={formData.letrado_atestado}
+                    onValueChange={(value) => handleInputChange('letrado_atestado', value)}
                   >
                     <SelectTrigger className="col-span-3">
                       <SelectValue placeholder="Seleccionar atestado" />
