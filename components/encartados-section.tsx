@@ -26,6 +26,7 @@ interface FormData {
   delito: string
   juzgado: string
   // Campos para Personas
+  atestado: string
   nombre: string
   apellido1: string
   apellido2: string
@@ -54,6 +55,7 @@ interface Entidad {
   delito?: string
   juzgado?: string
   // Campos para Personas
+  atestado?: string
   nombre?: string
   apellido1?: string
   apellido2?: string
@@ -91,6 +93,7 @@ export function EncartadosSection({
   const [isDeletingAll, setIsDeletingAll] = useState(false)
   const [userData, setUserData] = useState<UserData | null>(null)
   const [activeTab, setActiveTab] = useState<'personas' | 'letrados' | 'atestados'>('atestados')
+  const [atestadosDisponibles, setAtestadosDisponibles] = useState<{id: number, numero: string}[]>([])
   
   const [formData, setFormData] = useState<FormData>({
     // Atestados
@@ -122,6 +125,11 @@ export function EncartadosSection({
     }
   }, [user])
 
+  // Actualizar atestados disponibles cuando cambie la lista de entidades
+  useEffect(() => {
+    loadAtestadosDisponibles()
+  }, [entidades])
+
   const loadUserData = async () => {
     if (!user) return
 
@@ -141,6 +149,19 @@ export function EncartadosSection({
     } catch (error) {
       console.error('Error inesperado:', error)
     }
+  }
+
+  const loadAtestadosDisponibles = () => {
+    // Filtrar atestados de la lista de entidades existente
+    const atestados = entidades
+      .filter(entidad => entidad.tipo === 'atestado' && entidad.numero)
+      .map(entidad => ({
+        id: entidad.id,
+        numero: entidad.numero!
+      }))
+      .sort((a, b) => a.numero.localeCompare(b.numero))
+
+    setAtestadosDisponibles(atestados)
   }
 
   const loadEntidades = async () => {
@@ -254,6 +275,7 @@ export function EncartadosSection({
           const { error } = await supabase
             .from('entidades_personas')
             .update({
+              atestado: formData.atestado.trim() || null,
               nombre: formData.nombre.trim(),
               apellido1: formData.apellido1.trim(),
               apellido2: formData.apellido2.trim(),
@@ -279,6 +301,7 @@ export function EncartadosSection({
           const { error } = await supabase
             .from('entidades_personas')
             .insert({
+              atestado: formData.atestado.trim() || null,
               nombre: formData.nombre.trim(),
               apellido1: formData.apellido1.trim(),
               apellido2: formData.apellido2.trim(),
@@ -432,6 +455,7 @@ export function EncartadosSection({
         delito: '',
         juzgado: '',
         // Personas
+        atestado: entidad.atestado || '',
         nombre: entidad.nombre || '',
         apellido1: entidad.apellido1 || '',
         apellido2: entidad.apellido2 || '',
@@ -584,6 +608,7 @@ export function EncartadosSection({
       delito: '',
       juzgado: '',
       // Personas
+      atestado: '',
       nombre: '',
       apellido1: '',
       apellido2: '',
@@ -693,6 +718,11 @@ export function EncartadosSection({
                               {entidad.nombre} {entidad.apellido1} {entidad.apellido2}
                             </div>
                           </div>
+                          {entidad.atestado && (
+                            <div className="text-sm text-muted-foreground mt-1">
+                              <span className="font-medium">Atestado:</span> {entidad.atestado}
+                            </div>
+                          )}
                           <div className="text-sm text-muted-foreground mt-1">
                             <span className="font-medium">Documento:</span> {entidad.documento}
                           </div>
@@ -823,6 +853,26 @@ export function EncartadosSection({
             {/* Campos para Personas */}
              {activeTab === 'personas' && (
                <>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                   <Label htmlFor="atestado" className="text-right">
+                     Atestado
+                   </Label>
+                   <Select
+                     value={formData.atestado}
+                     onValueChange={(value) => handleInputChange('atestado', value)}
+                   >
+                     <SelectTrigger className="col-span-3">
+                       <SelectValue placeholder="Seleccionar atestado" />
+                     </SelectTrigger>
+                     <SelectContent>
+                       {atestadosDisponibles.map((atestado) => (
+                         <SelectItem key={atestado.id} value={atestado.numero}>
+                           {atestado.numero}
+                         </SelectItem>
+                       ))}
+                     </SelectContent>
+                   </Select>
+                 </div>
                  <div className="grid grid-cols-4 items-center gap-4">
                    <Label htmlFor="nombre" className="text-right">
                      Nombre *
