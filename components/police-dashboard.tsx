@@ -1,12 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { diligenciasData } from "@/app/diligencias/diligencias-data"
+import { supabase } from "@/lib/supabase"
+import { useAuth } from "@/contexts/auth-context"
 import {
   FileText,
   Code,
@@ -54,7 +56,60 @@ const navigationItems = [
 export function PoliceDashboard() {
   const [activeSection, setActiveSection] = useState("dashboard")
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isCheckingData, setIsCheckingData] = useState(true)
   const router = useRouter()
+  const { user } = useAuth()
+
+  // Verificar si existen datos del usuario al cargar el componente
+  useEffect(() => {
+    const checkUserData = async () => {
+      if (!user) {
+        setIsCheckingData(false)
+        return
+      }
+
+      try {
+        // Consultar si existe algún registro en la tabla datos para el usuario
+        const { data, error, count } = await supabase
+          .from('datos')
+          .select('*', { count: 'exact' })
+          .eq('usuario', user.id)
+
+        if (error) {
+          console.error('Error al consultar tabla datos:', error)
+          // En caso de error, redirigir a configuración por seguridad
+          router.push('/configuracion')
+          return
+        }
+
+        // Si no hay datos (count es 0 o data está vacío), redirigir a configuración
+        if (!data || data.length === 0 || count === 0) {
+          router.push('/configuracion')
+          return
+        }
+
+        // Si hay datos, permitir acceso al dashboard
+        setIsCheckingData(false)
+      } catch (error) {
+        console.error('Error inesperado al verificar datos:', error)
+        router.push('/configuracion')
+      }
+    }
+
+    checkUserData()
+  }, [user, router])
+
+  // Mostrar loading mientras se verifican los datos
+  if (isCheckingData) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Verificando datos del usuario...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">

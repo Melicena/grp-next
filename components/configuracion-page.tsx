@@ -197,18 +197,30 @@ export default function ConfiguracionPage() {
                   id="tip"
                   value={configuracion.tip}
                   onChange={(e) => handleInputChange('tip', e.target.value)}
-                  placeholder="Ingrese el TIP"
+                  placeholder="Ej: A12345A"
+                  required
                   className="border-2 border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
-              
+                   <div className="space-y-2">
+                <Label htmlFor="zona" className="text-sm font-semibold text-foreground">Zona</Label>
+                <Input
+                  id="zona"
+                  value={configuracion.zona}
+                  onChange={(e) => handleInputChange('zona', e.target.value)}
+                  placeholder="Ej: Andalucía"  
+                  required
+                  className="border-2 border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="comandancia" className="text-sm font-semibold text-foreground">Comandancia</Label>
                 <Input
                   id="comandancia"
                   value={configuracion.comandancia}
                   onChange={(e) => handleInputChange('comandancia', e.target.value)}
-                  placeholder="Ingrese la comandancia"
+                  placeholder="Ej: Almería"
+                  required
                   className="border-2 border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
@@ -219,7 +231,8 @@ export default function ConfiguracionPage() {
                   id="compania"
                   value={configuracion.compania}
                   onChange={(e) => handleInputChange('compania', e.target.value)}
-                  placeholder="Ingrese la compañía"
+                  placeholder="Ej: El Ejido"
+                  required
                   className="border-2 border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
@@ -230,7 +243,8 @@ export default function ConfiguracionPage() {
                   id="puesto"
                   value={configuracion.puesto}
                   onChange={(e) => handleInputChange('puesto', e.target.value)}
-                  placeholder="Ingrese el puesto"
+                  placeholder="Ej: Puesto de Berja"
+                  required
                   className="border-2 border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
@@ -241,7 +255,8 @@ export default function ConfiguracionPage() {
                   id="localidad"
                   value={configuracion.localidad}
                   onChange={(e) => handleInputChange('localidad', e.target.value)}
-                  placeholder="Ingrese la localidad"
+                  placeholder="Ej: Berja"
+                  required
                   className="border-2 border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
@@ -252,7 +267,8 @@ export default function ConfiguracionPage() {
                   id="provincia"
                   value={configuracion.provincia}
                   onChange={(e) => handleInputChange('provincia', e.target.value)}
-                  placeholder="Ingrese la provincia"
+                  placeholder="Ej: Almería"
+                  required
                   className="border-2 border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
@@ -264,7 +280,8 @@ export default function ConfiguracionPage() {
                   type="tel"
                   value={configuracion.telefono}
                   onChange={(e) => handleInputChange('telefono', e.target.value)}
-                  placeholder="Ingrese el teléfono"
+                  placeholder="Ej: 950.49.00.12"
+                  required
                   className="border-2 border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
@@ -276,7 +293,8 @@ export default function ConfiguracionPage() {
                   type="email"
                   value={configuracion.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder="Ingrese el email"
+                  placeholder="Ej: al-pto-berja@guardiacivil.org"
+                  required
                   className="border-2 border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
@@ -287,7 +305,8 @@ export default function ConfiguracionPage() {
                   id="cp"
                   value={configuracion.cp}
                   onChange={(e) => handleInputChange('cp', e.target.value)}
-                  placeholder="Ingrese el código postal"
+                  placeholder="Ej: 04760"
+                  required
                   className="border-2 border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
@@ -298,7 +317,8 @@ export default function ConfiguracionPage() {
                   id="partido_judicial"
                   value={configuracion.partido_judicial}
                   onChange={(e) => handleInputChange('partido_judicial', e.target.value)}
-                  placeholder="Ingrese el partido judicial"
+                  placeholder="Ej: Berja"
+                  required
                   className="border-2 border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
@@ -309,21 +329,13 @@ export default function ConfiguracionPage() {
                   id="codigo_unidad"
                   value={configuracion.codigo_unidad}
                   onChange={(e) => handleInputChange('codigo_unidad', e.target.value)}
-                  placeholder="Ingrese el código de unidad"
+                  placeholder="Ej: 1353"
+                  required
                   className="border-2 border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
   
-              <div className="space-y-2">
-                <Label htmlFor="zona" className="text-sm font-semibold text-foreground">Zona</Label>
-                <Input
-                  id="zona"
-                  value={configuracion.zona}
-                  onChange={(e) => handleInputChange('zona', e.target.value)}
-                  placeholder="Ingrese la zona"
-                  className="border-2 border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
+         
             </div>
   
             <div className="space-y-2">
@@ -334,6 +346,7 @@ export default function ConfiguracionPage() {
                 onChange={(e) => handleInputChange('direccion', e.target.value)}
                 placeholder="Ingrese la dirección completa"
                 rows={3}
+                required
                 className="border-2 border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none"
               />
             </div>
