@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,6 +28,7 @@ export function DiligenciasPage({ className }: DiligenciasPageProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [filtroTipo, setFiltroTipo] = useState("todos")
   const [filtroEstado] = useState("todos")
+  const router = useRouter()
 
   // Obtener tipos únicos para el filtro - ahora desde arrays
   const tiposUnicos = Array.from(new Set(diligenciasData.flatMap(d => d.tipo))).sort()
@@ -44,9 +46,14 @@ export function DiligenciasPage({ className }: DiligenciasPageProps) {
   }).sort((a, b) => a.titulo.localeCompare(b.titulo))
 
   const handleVerDocumento = (id: string) => {
-    // Aquí puedes implementar la navegación a la página específica del documento
-    console.log(`Navegando al documento: ${id}`)
-    // Por ejemplo: router.push(`/diligencias/${id}`)
+    // Navegación específica según el tipo de diligencia
+    if (id === "Diligencia de Archivo") {
+      router.push("/diligencias/archivo")
+    } else {
+      console.log(`Navegando al documento: ${id}`)
+      // Para otros tipos de diligencias, implementar navegación específica
+      // router.push(`/diligencias/${id}`)
+    }
   }
 
   // Función para obtener el color del badge según el tipo - todos en azul
@@ -133,7 +140,11 @@ export function DiligenciasPage({ className }: DiligenciasPageProps) {
         ) : (
           <div className="grid gap-4">
             {diligenciasFiltradas.map((diligencia) => (
-              <Card key={diligencia.titulo} className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary/20 hover:border-l-primary/40">
+              <Card 
+                key={diligencia.titulo} 
+                className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary/20 hover:border-l-primary/40 cursor-pointer"
+                onClick={() => handleVerDocumento(diligencia.titulo)}
+              >
                 <CardHeader className="">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex-1 space-y-1">
@@ -153,14 +164,10 @@ export function DiligenciasPage({ className }: DiligenciasPageProps) {
                       </div>
                     </div>
                     <div className="flex items-center">
-                      <Button
-                        onClick={() => handleVerDocumento(diligencia.titulo)}
-                        className="flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow"
-                        size="sm"
-                      >
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <FileText className="h-4 w-4" />
-                        Abrir
-                      </Button>
+                        <span>Abrir</span>
+                      </div>
                     </div>
                   </div>
                 </CardHeader>

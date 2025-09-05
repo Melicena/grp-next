@@ -6,16 +6,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
+import { BackButton } from "@/components/back-button"
 import { useState, useEffect } from "react"
 import { Archive, Send } from "lucide-react"
-
-const PREDEFINED_TEXT = `Realizadas gestiones por la Unidad instructora para el esclarecimiento de los hechos, hasta el momento, no han dado resultado positivo. No obstante, se seguirá con la práctica de las mismas de cuyo resultado, en caso positivo, se dará oportuna cuenta.
-
-En cumplimiento de lo previsto en el art. 284.2 de la LECrim, al no existir autor conocido, las presentes diligencias quedan archivadas en este acuartelamiento, donde quedarán a disposición de la Autoridad Judicial competente y del Ministerio Fiscal.
-
-Y para que conste, se extiende la presente en el lugar y fecha señalados, que es firmada por la Fuerza Instructora.
-
-La Fuerza Instructora:`
+import { supabase } from "@/lib/supabase"
+import { toast } from "sonner"
+import { PREDEFINED_TEXT, SPANISH_MONTHS } from "./constants"
 
 function formatSpanishDate(): string {
   const now = new Date()
@@ -24,41 +20,142 @@ function formatSpanishDate(): string {
   const day = now.getDate()
   const year = now.getFullYear()
   
-  const months = [
-    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
-  ]
-  
-  const month = months[now.getMonth()]
+  const month = SPANISH_MONTHS[now.getMonth()]
   
   return `${hours}:${minutes} horas del día ${day} de ${month} de ${year}`
 }
 
+// Interfaz para los datos del usuario
+interface UserData {
+  tip: string
+  comandancia: string
+  compania: string
+  puesto: string
+  localidad: string
+  telefono: string
+  email: string
+  direccion: string
+  provincia: string
+  cp: string
+  partido_judicial: string
+  codigo_unidad: string
+  zona: string
+}
+
 export default function ArchivoPage() {
-  const [atestado, setAtestado] = useState("2025-1353-")
+  const [atestado, setAtestado] = useState("")
   const [fecha, setFecha] = useState("")
   const [texto, setTexto] = useState(PREDEFINED_TEXT)
+  const [userData, setUserData] = useState<UserData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [userId, setUserId] = useState<string | null>(null)
 
+  // Efecto para actualizar el atestado cuando se cargan los datos del usuario
+  useEffect(() => {
+    if (userData?.codigo_unidad) {
+      const currentYear = new Date().getFullYear()
+      setAtestado(`${currentYear}-${userData.codigo_unidad}-`)
+    }
+  }, [userData])
   useEffect(() => {
     setFecha(formatSpanishDate())
+    obtenerUsuarioActual()
   }, [])
+
+  useEffect(() => {
+    if (userId) {
+      cargarDatosUsuario()
+    }
+  }, [userId])
+
+  const obtenerUsuarioActual = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUserId(user.id)
+      }
+    } catch (error: unknown) {
+      console.error('Error obteniendo usuario:', error)
+      toast.error("Error", {
+        description: "No se pudo obtener la información del usuario"
+      })
+    }
+  }
+
+  const cargarDatosUsuario = async () => {
+    if (!userId) return
+    
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('datos')
+        .select('*')
+        .eq('usuario', userId)
+        .single()
+
+      if (error && error.code !== 'PGRST116') {
+        throw error
+      }
+
+      if (data) {
+        setUserData({
+          tip: data.tip || "",
+          comandancia: data.comandancia || "",
+          compania: data.compania || "",
+          puesto: data.puesto || "",
+          localidad: data.localidad || "",
+          telefono: data.telefono || "",
+          email: data.email || "",
+          direccion: data.direccion || "",
+          provincia: data.provincia || "",
+          cp: data.cp || "",
+          partido_judicial: data.partido_judicial || "",
+          codigo_unidad: data.codigo_unidad || "",
+          zona: data.zona || ""
+        })
+      }
+    } catch (error: unknown) {
+      console.error('Error cargando datos del usuario:', error)
+      toast.error("Error", {
+        description: "No se pudieron cargar los datos del usuario"
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     // El formulario se enviará automáticamente al servidor con todos los valores
+  }
+
+  if (loading) {
+    return (
+      <SharedLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Cargando datos del usuario...</p>
+          </div>
+        </div>
+      </SharedLayout>
+    )
   }
 
   return (
     <SharedLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <Archive className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Archivo de Diligencias</h1>
-            <p className="text-muted-foreground">
-              Formulario para el archivado de diligencias policiales
-            </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Archive className="h-8 w-8 text-primary" />
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Archivo de Diligencias</h1>
+              <p className="text-muted-foreground">
+                Formulario para el archivado de diligencias policiales
+              </p>
+            </div>
           </div>
+          <BackButton href="/diligencias" />
         </div>
 
         {/* Formulario */}
@@ -128,7 +225,6 @@ export default function ArchivoPage() {
               </div>
 
               {/* Campos ocultos para el servidor - ahora con datos reales */}
-              {/* Campos ocultos para el servidor - ahora con datos reales */}
               <input type="hidden" name="datos_comandancia" value={userData?.comandancia || "VACIA"} />
               <input type="hidden" name="datos_compania" value={userData?.compania || "VACIA"} />
               <input type="hidden" name="datos_puesto" value={userData?.puesto || "VACIA"} />
@@ -138,8 +234,10 @@ export default function ArchivoPage() {
               <input type="hidden" name="datos_direccion" value={userData?.direccion || "VACIA"} />
               <input type="hidden" name="datos_provincia" value={userData?.provincia || "VACIA"} />
               <input type="hidden" name="datos_cp" value={userData?.cp || "VACIA"} />
+              
               {/* Botón de envío */}
-              <div className="flex justify-end pt-4">
+              <div className="flex justify-between items-center pt-4">
+                <BackButton href="/diligencias" variant="outline" />
                 <Button type="submit" className="flex items-center gap-2">
                   <Send className="h-4 w-4" />
                   Generar diligencia
