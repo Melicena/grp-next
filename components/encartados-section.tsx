@@ -84,6 +84,22 @@ export function EncartadosSection({
   showActions = true,
   className = ""
 }: EncartadosSectionProps) {
+  
+  const getRelacionColor = (relacion: string) => {
+    switch (relacion.toLowerCase()) {
+      case 'denunciante':
+        return 'bg-green-100 text-green-800'
+      case 'denunciado':
+        return 'bg-orange-100 text-orange-800'
+      case 'detenido':
+      case 'investigado':
+        return 'bg-red-100 text-red-800'
+      case 'testigo':
+        return 'bg-yellow-100 text-yellow-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
   const { user } = useAuth()
   const [entidades, setEntidades] = useState<Entidad[]>([])
   const [isLoadingEntidades, setIsLoadingEntidades] = useState(true)
@@ -712,7 +728,7 @@ export function EncartadosSection({
                     placeholder="Filtrar entidades..."
                     value={filtroTexto}
                     onChange={(e) => setFiltroTexto(e.target.value)}
-                    className="h-8"
+                    className="h-8 bg-orange-50 border-orange-200 focus:bg-orange-100 focus:border-orange-300"
                   />
                 </div>
               </div>
@@ -787,7 +803,7 @@ export function EncartadosSection({
                         <>
                           <div className="flex items-center gap-2">
                             <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
-                              Persona
+                              Persona {entidad.relacion && `- ${entidad.relacion}`}
                             </span>
                             <div className="font-medium">
                               {entidad.nombre} {entidad.apellido1} {entidad.apellido2}
@@ -804,7 +820,7 @@ export function EncartadosSection({
                           {entidad.relacion && (
                             <div className="text-sm text-muted-foreground">
                               <span className="font-medium">Relación:</span> 
-                              <span className="ml-1 px-2 py-1 bg-yellow-300 text-black font-semibold rounded-md shadow-sm">
+                              <span className={`ml-1 px-2 py-1 font-medium rounded-full text-xs ${getRelacionColor(entidad.relacion)}`}>
                                 {entidad.relacion}
                               </span>
                             </div>
@@ -820,7 +836,7 @@ export function EncartadosSection({
                         <>
                           <div className="flex items-center gap-2">
                             <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">
-                              Letrado
+                              Letrado {entidad.letrado_tipo && `- ${entidad.letrado_tipo}`}
                             </span>
                             <div className="font-medium">
                               {entidad.nombre} {entidad.numero}
