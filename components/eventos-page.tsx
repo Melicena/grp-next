@@ -24,6 +24,7 @@ import { toast } from "sonner"
 
 interface Evento {
   id: number
+  numero: number
   descripcion: string
   actualizado: string
 }
@@ -41,8 +42,8 @@ export function EventosPage() {
       setLoading(true)
       const { data, error } = await supabase
         .from('eventos')
-        .select('id, descripcion, actualizado')
-        .order('id', { ascending: true })
+        .select('id, numero, descripcion, actualizado')
+        .order('numero', { ascending: true })
 
       if (error) {
         console.error('Error fetching eventos:', error)
@@ -153,7 +154,7 @@ export function EventosPage() {
                 <TableBody>
                   {eventos.map((evento) => (
                     <TableRow key={evento.id}>
-                      <TableCell className="font-medium">{evento.id}</TableCell>
+                      <TableCell className="font-medium">{evento.numero}</TableCell>
                       <TableCell>{evento.descripcion}</TableCell>
                       <TableCell>{formatDate(evento.actualizado)}</TableCell>
                       <TableCell className="text-right">
