@@ -19,6 +19,7 @@ interface EncartadosSectionProps {
   showActions?: boolean
   className?: string
   onAtestadoSelect?: (numeroAtestado: string, delito?: string) => void
+  onLetradoSelect?: (letrado: { nombre: string, numero: string }) => void
 }
 
 interface FormData {
@@ -84,7 +85,8 @@ export function EncartadosSection({
   description = "Denunciantes, denunciados, detenidos, letrados, testigos, etc.",
   showActions = true,
   className = "",
-  onAtestadoSelect
+  onAtestadoSelect,
+  onLetradoSelect
 }: EncartadosSectionProps) {
   
   const getRelacionColor = (relacion: string) => {
@@ -724,6 +726,16 @@ export function EncartadosSection({
       nuevasSeleccionadas.delete(entidadKey)
     } else {
       nuevasSeleccionadas.add(entidadKey)
+      
+      // Llamar al callback correspondiente cuando se selecciona una entidad
+      if (entidad.tipo === 'atestado' && onAtestadoSelect) {
+        onAtestadoSelect(entidad.numero || '', entidad.delito)
+      } else if (entidad.tipo === 'letrado' && onLetradoSelect) {
+        onLetradoSelect({
+          nombre: entidad.nombre || '',
+          numero: entidad.numero || ''
+        })
+      }
     }
     
     setEntidadesSeleccionadas(nuevasSeleccionadas)
