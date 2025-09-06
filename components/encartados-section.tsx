@@ -762,6 +762,16 @@ export function EncartadosSection({
                   Añadir
                 </Button>
                 <Button 
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 bg-green-500 text-white hover:bg-green-600 border-green-500 hover:border-green-600"
+                  onClick={() => setEntidadesSeleccionadas(new Set())}
+                  disabled={entidadesSeleccionadas.size === 0}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Desmarcar
+                </Button>
+                <Button 
                   variant="destructive" 
                   size="sm"
                   className="flex items-center gap-2"
