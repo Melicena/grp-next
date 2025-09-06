@@ -168,9 +168,9 @@ export function EncartadosSection({
 
     try {
       const { data, error } = await supabase
-        .from('usuarios')
+        .from('datos')
         .select('codigo_unidad')
-        .eq('id', user.id)
+        .eq('usuario', user.id)  // Cambiado de 'id' a 'usuario'
         .single()
 
       if (error) {
