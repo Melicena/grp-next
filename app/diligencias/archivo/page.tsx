@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { BackButton } from "@/components/back-button"
+import { EncartadosSection } from "@/components/encartados-section"
 import { useState, useEffect } from "react"
 import { Archive, Send, Plus, Loader2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
@@ -331,6 +332,18 @@ adjustTextareaHeight(e.target)
             </form>
           </CardContent>
         </Card>
+
+        {/* Sección de Entidades */}
+        <EncartadosSection 
+          title="Entidades Relacionadas"
+          description="Gestiona atestados, personas y letrados relacionados con las diligencias"
+          showActions={true}
+          className=""
+          onAtestadoSelect={(numeroAtestado) => {
+            setAtestado(numeroAtestado)
+            toast.success(`Atestado ${numeroAtestado} seleccionado automáticamente`)
+          }}
+        />
       </div>
        {/* Modal para seleccionar entidades DGS */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>

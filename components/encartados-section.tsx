@@ -18,6 +18,7 @@ interface EncartadosSectionProps {
   description?: string
   showActions?: boolean
   className?: string
+  onAtestadoSelect?: (numeroAtestado: string) => void
 }
 
 interface FormData {
@@ -82,7 +83,8 @@ export function EncartadosSection({
   title = "Entidades Relacionados",
   description = "Denunciantes, denunciados, detenidos, letrados, testigos, etc.",
   showActions = true,
-  className = ""
+  className = "",
+  onAtestadoSelect
 }: EncartadosSectionProps) {
   
   const getRelacionColor = (relacion: string) => {
@@ -112,7 +114,13 @@ export function EncartadosSection({
   const [activeTab, setActiveTab] = useState<'personas' | 'letrados' | 'atestados'>('atestados')
   const [atestadosDisponibles, setAtestadosDisponibles] = useState<{id: number, numero: string}[]>([])  
   const [filtroTexto, setFiltroTexto] = useState('')
-  const [entidadesSeleccionadas, setEntidadesSeleccionadas] = useState<Set<string>>(new Set())
+  const [entidadesSeleccionadas, setEntidadesSeleccionadas] = useState<Set<string>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('entidadesSeleccionadas')
+      return saved ? new Set(JSON.parse(saved)) : new Set()
+    }
+    return new Set()
+  })
   
   const [formData, setFormData] = useState<FormData>({
     // Atestados
@@ -147,6 +155,13 @@ export function EncartadosSection({
   useEffect(() => {
     loadAtestadosDisponibles()
   }, [entidades])
+
+  // Persistir selecciones en localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('entidadesSeleccionadas', JSON.stringify(Array.from(entidadesSeleccionadas)))
+    }
+  }, [entidadesSeleccionadas])
 
   const loadUserData = async () => {
     if (!user) return
@@ -780,7 +795,19 @@ export function EncartadosSection({
             ) : (
               <div className="space-y-3">
                 {entidadesFiltradas.map((entidad) => (
-                  <div key={`${entidad.tipo}-${entidad.id}`} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div 
+                    key={`${entidad.tipo}-${entidad.id}`} 
+                    className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
+                      entidad.tipo === 'atestado' && onAtestadoSelect 
+                        ? 'hover:bg-blue-50 cursor-pointer border-blue-200 hover:border-blue-300' 
+                        : 'hover:bg-muted/50'
+                    }`}
+                    onClick={() => {
+                      if (entidad.tipo === 'atestado' && onAtestadoSelect && entidad.numero) {
+                        onAtestadoSelect(entidad.numero)
+                      }
+                    }}
+                  >
                     <div className="flex-1">
                       {/* Mostrar información según el tipo de entidad */}
                       {entidad.tipo === 'atestado' && (
