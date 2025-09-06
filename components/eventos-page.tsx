@@ -22,6 +22,7 @@ import {
 import { Edit, Trash2, Plus, Calendar, Search } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
+import { useAuth } from "@/contexts/auth-context"
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Label } from "@/components/ui/label"
 
 interface Evento {
@@ -41,6 +53,7 @@ interface Evento {
 }
 
 export function EventosPage() {
+  const { user } = useAuth()
   const [eventos, setEventos] = useState<Evento[]>([])
   const [filteredEventos, setFilteredEventos] = useState<Evento[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -48,6 +61,9 @@ export function EventosPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [newEvento, setNewEvento] = useState({ numero: "", descripcion: "" })
   const [saving, setSaving] = useState(false)
+  const [editingEvento, setEditingEvento] = useState<Evento | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [eventoToDelete, setEventoToDelete] = useState<Evento | null>(null)
 
   useEffect(() => {
     fetchEventos()
@@ -78,20 +94,27 @@ export function EventosPage() {
   }
 
   const handleEdit = (evento: Evento) => {
-    // TODO: Implementar modal de edición
-    toast.info(`Editar evento: ${evento.descripcion}`)
+    setEditingEvento(evento)
+    setNewEvento({ 
+      numero: evento.numero.toString(), 
+      descripcion: evento.descripcion 
+    })
+    setIsDialogOpen(true)
   }
 
-  const handleDelete = async (evento: Evento) => {
-    if (!confirm(`¿Estás seguro de que quieres eliminar el evento "${evento.descripcion}"?`)) {
-      return
-    }
+  const handleDelete = (evento: Evento) => {
+    setEventoToDelete(evento)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!eventoToDelete) return
 
     try {
       const { error } = await supabase
         .from('eventos')
         .delete()
-        .eq('id', evento.id)
+        .eq('id', eventoToDelete.id)
 
       if (error) {
         console.error('Error deleting evento:', error)
@@ -101,6 +124,8 @@ export function EventosPage() {
 
       toast.success('Evento eliminado correctamente')
       fetchEventos() // Recargar la lista
+      setIsDeleteDialogOpen(false)
+      setEventoToDelete(null)
     } catch (error) {
       console.error('Error:', error)
       toast.error('Error al eliminar el evento')
@@ -121,27 +146,52 @@ export function EventosPage() {
 
     try {
       setSaving(true)
-      const { error } = await supabase
-        .from('eventos')
-        .insert({
-          numero: numeroValue,
-          descripcion: newEvento.descripcion.trim(),
-          actualizado: new Date().toISOString()
-        })
+      
+      if (editingEvento) {
+        // Actualizar evento existente
+        const { error } = await supabase
+          .from('eventos')
+          .update({
+            numero: numeroValue,
+            descripcion: newEvento.descripcion.trim(),
+            actualizado: new Date().toISOString()
+          })
+          .eq('id', editingEvento.id)
 
-      if (error) {
-        console.error('Error creating evento:', error)
-        toast.error('Error al crear el evento')
-        return
+        if (error) {
+          console.error('Error updating evento:', error)
+          toast.error('Error al actualizar el evento')
+          return
+        }
+
+        toast.success('Evento actualizado correctamente')
+      } else {
+        // Crear nuevo evento
+        const { error } = await supabase
+          .from('eventos')
+          .insert({
+            numero: numeroValue,
+            descripcion: newEvento.descripcion.trim(),
+            usuario: user?.id,
+            actualizado: new Date().toISOString()
+          })
+
+        if (error) {
+          console.error('Error creating evento:', error)
+          toast.error('Error al crear el evento')
+          return
+        }
+
+        toast.success('Evento creado correctamente')
       }
 
-      toast.success('Evento creado correctamente')
       setIsDialogOpen(false)
       setNewEvento({ numero: "", descripcion: "" })
+      setEditingEvento(null)
       fetchEventos() // Recargar la lista
     } catch (error) {
       console.error('Error:', error)
-      toast.error('Error al crear el evento')
+      toast.error(editingEvento ? 'Error al actualizar el evento' : 'Error al crear el evento')
     } finally {
       setSaving(false)
     }
@@ -149,6 +199,7 @@ export function EventosPage() {
 
   const handleCancelEvento = () => {
     setNewEvento({ numero: "", descripcion: "" })
+    setEditingEvento(null)
     setIsDialogOpen(false)
   }
 
@@ -206,9 +257,11 @@ export function EventosPage() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>Nuevo Evento</DialogTitle>
+                <DialogTitle>{editingEvento ? 'Editar Evento' : 'Nuevo Evento'}</DialogTitle>
                 <DialogDescription>
-                  Añade un nuevo evento al sistema. Completa todos los campos requeridos.
+                  {editingEvento 
+                    ? 'Modifica los datos del evento seleccionado.' 
+                    : 'Añade un nuevo evento al sistema. Completa todos los campos requeridos.'}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -252,7 +305,9 @@ export function EventosPage() {
                   onClick={handleSaveEvento}
                   disabled={saving}
                 >
-                  {saving ? "Guardando..." : "Guardar"}
+                  {saving 
+                    ? (editingEvento ? "Actualizando..." : "Guardando...") 
+                    : (editingEvento ? "Actualizar" : "Guardar")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -326,19 +381,16 @@ export function EventosPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleEdit(evento)}
-                            className="gap-1"
                           >
                             <Edit className="h-3 w-3" />
-                            Modificar
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleDelete(evento)}
-                            className="gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
                             <Trash2 className="h-3 w-3" />
-                            Borrar
                           </Button>
                         </div>
                       </TableCell>
@@ -350,6 +402,32 @@ export function EventosPage() {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará permanentemente el evento 
+              "{eventoToDelete?.descripcion}" de la base de datos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setIsDeleteDialogOpen(false)
+              setEventoToDelete(null)
+            }}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SharedLayout>
   )
 }
