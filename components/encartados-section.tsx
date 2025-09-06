@@ -18,7 +18,7 @@ interface EncartadosSectionProps {
   description?: string
   showActions?: boolean
   className?: string
-  onAtestadoSelect?: (numeroAtestado: string) => void
+  onAtestadoSelect?: (numeroAtestado: string, delito?: string) => void
 }
 
 interface FormData {
@@ -814,7 +814,7 @@ export function EncartadosSection({
                     }`}
                     onClick={() => {
                       if (entidad.tipo === 'atestado' && onAtestadoSelect && entidad.numero) {
-                        onAtestadoSelect(entidad.numero)
+                        onAtestadoSelect(entidad.numero, entidad.delito)
                       }
                     }}
                   >

@@ -31,6 +31,7 @@ export function BackButton({
 
   return (
     <Button
+      type="button"
       onClick={handleBack}
       variant={variant}
       size={size}

@@ -52,6 +52,8 @@ export function DiligenciasPage({ className }: DiligenciasPageProps) {
       router.push("/diligencias/archivo")
     } else if (id === "Carátula (Archivo)") {
       router.push("/diligencias/caratula-archivo")
+    } else if (id === "Carátula (Traspaso)") {
+      router.push("/diligencias/caratula-traspaso")
     } else {
       console.log(`Navegando al documento: ${id}`)
       // Para otros tipos de diligencias, implementar navegación específica

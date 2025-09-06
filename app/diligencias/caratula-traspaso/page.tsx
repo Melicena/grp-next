@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { BackButton } from "@/components/back-button"
+import { EncartadosSection } from "@/components/encartados-section"
 import { useState, useEffect } from "react"
 import { Archive, Send, Plus, Loader2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
@@ -14,17 +15,17 @@ import { toast } from "sonner"
 import { useAuth } from "@/contexts/auth-context"
 import { SPANISH_MONTHS } from "../archivo/constants"
 import { DELITOS } from "@/components/data/delitos"
+import { PUESTOS } from "@/components/data/puestos"
 
 function formatSpanishDate(): string {
   const now = new Date()
+  const day = now.getDate().toString().padStart(2, '0')
+  const month = SPANISH_MONTHS[now.getMonth()]
+  const year = now.getFullYear()
   const hours = now.getHours().toString().padStart(2, '0')
   const minutes = now.getMinutes().toString().padStart(2, '0')
-  const day = now.getDate()
-  const year = now.getFullYear()
   
-  const month = SPANISH_MONTHS[now.getMonth()]
-  
-  return `${hours}:${minutes} horas del día ${day} de ${month} de ${year}`
+  return `${day} de ${month} de ${year}, a las ${hours}:${minutes} horas`
 }
 
 // Interfaz para los datos del usuario
@@ -54,11 +55,12 @@ interface EntidadDGS {
   usuario: string
 }
 
-export default function CaratulaArchivoPage() {
+export default function CaratulaTraspasoPage() {
   const [atestado, setAtestado] = useState("")
   const [fecha, setFecha] = useState("")
   const [instructor, setInstructor] = useState("")
   const [supuesto, setSupuesto] = useState("")
+  const [traspasadasA, setTraspasadasA] = useState("")
   const [userData, setUserData] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
   
@@ -77,7 +79,7 @@ export default function CaratulaArchivoPage() {
     }
   }, [userData])
   
-  // Agregar este nuevo useEffect para rellenar el campo instructor
+  // useEffect para rellenar el campo instructor con userData.tip
   useEffect(() => {
     if (userData?.tip) {
       setInstructor(userData.tip)
@@ -185,10 +187,10 @@ export default function CaratulaArchivoPage() {
     toast.success(`Atestado ${entidad.numero} seleccionado`)
   }
 
-  // Función para abrir el modal y cargar entidades
-  const handleOpenModal = async () => {
+  // Función para abrir el modal
+  const handleOpenModal = () => {
     setIsModalOpen(true)
-    await loadEntidades()
+    loadEntidades()
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -216,9 +218,9 @@ export default function CaratulaArchivoPage() {
           <div className="flex items-center gap-3">
             <Archive className="h-8 w-8 text-primary" />
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Carátula de Archivo</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Carátula de Traspaso</h1>
               <p className="text-muted-foreground">
-                Formulario para la carátula de archivo de diligencias policiales
+                Formulario para la carátula de traspaso de diligencias policiales
               </p>
             </div>
           </div>
@@ -245,13 +247,13 @@ export default function CaratulaArchivoPage() {
               </Button>
             </CardTitle>
             <CardDescription>
-              Complete los siguientes campos para procesar la carátula de archivo
+              Complete los siguientes campos para procesar la carátula de traspaso
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form 
-              id="formCaratulaArchivo"
-              action="https://gpr-server.dj1x7g.easypanel.host/procesar-caratula-archivo"
+              id="formCaratulaTraspaso"
+              action="https://gpr-server.dj1x7g.easypanel.host/procesar-caratula-traspaso"
               method="POST"
               onSubmit={handleSubmit}
               className="space-y-6"
@@ -304,6 +306,29 @@ export default function CaratulaArchivoPage() {
                 />
               </div>
 
+              {/* Campo Traspasadas A - NUEVO CAMPO */}
+              <div className="space-y-2">
+                <Label htmlFor="traspasadas_a" className="text-sm font-medium">
+                  Traspasadas a
+                </Label>
+                <input
+                  type="text"
+                  id="traspasadas_a"
+                  name="traspasadas_a"
+                  list="puestos_list"
+                  value={traspasadasA}
+                  onChange={(e) => setTraspasadasA(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 font-mono border-2 border-gray-300 bg-white focus:border-blue-500 focus:bg-blue-50 dark:border-gray-600 dark:bg-gray-800 dark:focus:border-blue-400 dark:focus:bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Seleccionar puesto o escribir manualmente..."
+                />
+                <datalist id="puestos_list">
+                  {PUESTOS.map((puesto, index) => (
+                    <option key={index} value={puesto.label} />
+                  ))}
+                </datalist>
+              </div>
+
               {/* Campo Supuesto */}
               <div className="space-y-2">
                 <Label htmlFor="supuesto" className="text-sm font-medium">
@@ -311,8 +336,8 @@ export default function CaratulaArchivoPage() {
                 </Label>
                 <input
                   type="text"
-                  id="supuesto"
-                  name="supuesto"
+                  id="supuesto_penal"
+                  name="supuesto_penal"
                   list="delitos_list"
                   value={supuesto}
                   onChange={(e) => setSupuesto(e.target.value)}
@@ -327,7 +352,7 @@ export default function CaratulaArchivoPage() {
                 </datalist>
               </div>
 
-              {/* Campos ocultos para el servidor - ahora con datos reales */}
+              {/* Campos ocultos para el servidor */}
               <input type="hidden" name="datos_comandancia" value={userData?.comandancia || "VACIA"} />
               <input type="hidden" name="datos_compania" value={userData?.compania || "VACIA"} />
               <input type="hidden" name="datos_puesto" value={userData?.puesto || "VACIA"} />
@@ -349,6 +374,23 @@ export default function CaratulaArchivoPage() {
             </form>
           </CardContent>
         </Card>
+
+        {/* Sección de Entidades */}
+        <EncartadosSection 
+          title="Entidades Relacionadas"
+          description="Gestiona atestados, personas y letrados relacionados con las diligencias"
+          showActions={true}
+          className=""
+          onAtestadoSelect={(numeroAtestado, delito) => {
+            setAtestado(numeroAtestado)
+            if (delito) {
+              setSupuesto(delito)
+              toast.success(`Atestado ${numeroAtestado} seleccionado. Supuesto actualizado: ${delito}`)
+            } else {
+              toast.success(`Atestado ${numeroAtestado} seleccionado automáticamente`)
+            }
+          }}
+        />
       </div>
        {/* Modal para seleccionar entidades DGS */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -368,33 +410,29 @@ export default function CaratulaArchivoPage() {
               </div>
             ) : entidades.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <Archive className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No hay entidades DGS disponibles</p>
-                <p className="text-sm">Crea una nueva entidad desde la sección correspondiente</p>
+                <p>No hay entidades DGS disponibles.</p>
+                <p className="text-sm mt-2">Puedes crear nuevas entidades desde la sección de Encartados.</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {entidades.map((entidad) => (
                   <div
                     key={entidad.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                    className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                     onClick={() => handleSelectEntidad(entidad)}
                   >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-4">
-                        <div>
-                          <p className="font-medium">{entidad.numero}</p>
-                          <p className="text-sm text-muted-foreground">{entidad.delito}</p>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          <p>{entidad.juzgado}</p>
-                          <p>{new Date(entidad.created_at).toLocaleDateString('es-ES')}</p>
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="font-medium">{entidad.numero}</div>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          <div><strong>Delito:</strong> {entidad.delito}</div>
+                          <div><strong>Juzgado:</strong> {entidad.juzgado}</div>
                         </div>
                       </div>
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(entidad.created_at).toLocaleDateString()}
+                      </div>
                     </div>
-                    <Button variant="outline" size="sm">
-                      Seleccionar
-                    </Button>
                   </div>
                 ))}
               </div>
