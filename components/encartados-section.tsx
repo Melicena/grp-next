@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { UserPlus, Save, Trash, Trash2, Edit, Loader2 } from "lucide-react"
+import { UserPlus, Save, Trash, Trash2, Edit, Loader2, X } from "lucide-react"
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from 'sonner'
@@ -768,7 +768,7 @@ export function EncartadosSection({
                   onClick={() => setEntidadesSeleccionadas(new Set())}
                   disabled={entidadesSeleccionadas.size === 0}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <X className="h-4 w-4" />
                   Desmarcar
                 </Button>
                 <Button 
@@ -778,7 +778,7 @@ export function EncartadosSection({
                   onClick={() => setIsDeletingAll(true)}
                   disabled={entidades.length === 0}
                 >
-                  <Trash className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4" />
                   Borrar Todo
                 </Button>
               </div>
