@@ -4,10 +4,8 @@ import { SharedLayout } from "@/components/shared-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BackButton } from "@/components/back-button"
 import { useState, useEffect } from "react"
 import { Archive, Send, Plus, Loader2 } from "lucide-react"
@@ -76,6 +74,13 @@ export default function CaratulaArchivoPage() {
     if (userData?.codigo_unidad) {
       const currentYear = new Date().getFullYear()
       setAtestado(`${currentYear}-${userData.codigo_unidad}-`)
+    }
+  }, [userData])
+  
+  // Agregar este nuevo useEffect para rellenar el campo instructor
+  useEffect(() => {
+    if (userData?.tip) {
+      setInstructor(userData.tip)
     }
   }, [userData])
   
