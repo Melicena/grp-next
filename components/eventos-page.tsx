@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { SharedLayout } from "@/components/shared-layout"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Table,
   TableBody,
@@ -18,9 +19,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Edit, Trash2, Plus, Calendar } from "lucide-react"
+import { Edit, Trash2, Plus, Calendar, Search } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 
 interface Evento {
   id: number
@@ -31,7 +42,12 @@ interface Evento {
 
 export function EventosPage() {
   const [eventos, setEventos] = useState<Evento[]>([])
+  const [filteredEventos, setFilteredEventos] = useState<Evento[]>([])
+  const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [newEvento, setNewEvento] = useState({ numero: "", descripcion: "" })
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     fetchEventos()
@@ -52,6 +68,7 @@ export function EventosPage() {
       }
 
       setEventos(data || [])
+      setFilteredEventos(data || [])
     } catch (error) {
       console.error('Error:', error)
       toast.error('Error al conectar con la base de datos')
@@ -90,6 +107,51 @@ export function EventosPage() {
     }
   }
 
+  const handleSaveEvento = async () => {
+    if (!newEvento.numero || !newEvento.descripcion) {
+      toast.error('Por favor completa todos los campos')
+      return
+    }
+
+    const numeroValue = parseInt(newEvento.numero)
+    if (isNaN(numeroValue)) {
+      toast.error('El número debe ser un valor numérico válido')
+      return
+    }
+
+    try {
+      setSaving(true)
+      const { error } = await supabase
+        .from('eventos')
+        .insert({
+          numero: numeroValue,
+          descripcion: newEvento.descripcion.trim(),
+          actualizado: new Date().toISOString()
+        })
+
+      if (error) {
+        console.error('Error creating evento:', error)
+        toast.error('Error al crear el evento')
+        return
+      }
+
+      toast.success('Evento creado correctamente')
+      setIsDialogOpen(false)
+      setNewEvento({ numero: "", descripcion: "" })
+      fetchEventos() // Recargar la lista
+    } catch (error) {
+      console.error('Error:', error)
+      toast.error('Error al crear el evento')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleCancelEvento = () => {
+    setNewEvento({ numero: "", descripcion: "" })
+    setIsDialogOpen(false)
+  }
+
   const formatDate = (dateString: string) => {
     try {
       return new Date(dateString).toLocaleDateString('es-ES', {
@@ -103,6 +165,23 @@ export function EventosPage() {
       return dateString
     }
   }
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term)
+    if (term.trim() === "") {
+      setFilteredEventos(eventos)
+    } else {
+      const filtered = eventos.filter(evento =>
+        evento.descripcion.toLowerCase().includes(term.toLowerCase()) ||
+        evento.numero.toString().includes(term)
+      )
+      setFilteredEventos(filtered)
+    }
+  }
+
+  useEffect(() => {
+    handleSearch(searchTerm)
+  }, [eventos])
 
   return (
     <SharedLayout>
@@ -118,11 +197,93 @@ export function EventosPage() {
               </p>
             </div>
           </div>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nuevo Evento
-          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Nuevo Evento
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Nuevo Evento</DialogTitle>
+                <DialogDescription>
+                  Añade un nuevo evento al sistema. Completa todos los campos requeridos.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="numero" className="text-right">
+                    Número
+                  </Label>
+                  <Input
+                    id="numero"
+                    type="number"
+                    value={newEvento.numero}
+                    onChange={(e) => setNewEvento({ ...newEvento, numero: e.target.value })}
+                    className="col-span-3"
+                    placeholder="Ej: 001"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="descripcion" className="text-right">
+                    Descripción
+                  </Label>
+                  <Input
+                    id="descripcion"
+                    value={newEvento.descripcion}
+                    onChange={(e) => setNewEvento({ ...newEvento, descripcion: e.target.value })}
+                    className="col-span-3"
+                    placeholder="Descripción del evento"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancelEvento}
+                  disabled={saving}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  onClick={handleSaveEvento}
+                  disabled={saving}
+                >
+                  {saving ? "Guardando..." : "Guardar"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
+
+        {/* Barra de búsqueda */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex justify-center">
+              <div className="flex w-full max-w-md gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Buscar eventos por descripción o número..."
+                    value={searchTerm}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Button
+                  onClick={() => handleSearch(searchTerm)}
+                  className="gap-2"
+                >
+                  <Search className="h-4 w-4" />
+                  Buscar
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Tabla de Eventos */}
         <Card>
@@ -137,9 +298,11 @@ export function EventosPage() {
               <div className="flex items-center justify-center py-8">
                 <div className="text-muted-foreground">Cargando eventos...</div>
               </div>
-            ) : eventos.length === 0 ? (
+            ) : filteredEventos.length === 0 ? (
               <div className="flex items-center justify-center py-8">
-                <div className="text-muted-foreground">No hay eventos registrados</div>
+                <div className="text-muted-foreground">
+                  {searchTerm ? "No se encontraron eventos que coincidan con la búsqueda" : "No hay eventos registrados"}
+                </div>
               </div>
             ) : (
               <Table>
@@ -152,7 +315,7 @@ export function EventosPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {eventos.map((evento) => (
+                  {filteredEventos.map((evento) => (
                     <TableRow key={evento.id}>
                       <TableCell className="font-medium">{evento.numero}</TableCell>
                       <TableCell>{evento.descripcion}</TableCell>
