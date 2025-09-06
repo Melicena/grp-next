@@ -22,6 +22,7 @@ import {
 import { Edit, Trash2, Plus, Calendar, Search } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
+import { useAuth } from "@/contexts/auth-context"
 import {
   Dialog,
   DialogContent,
@@ -41,6 +42,7 @@ interface Evento {
 }
 
 export function EventosPage() {
+  const { user } = useAuth()
   const [eventos, setEventos] = useState<Evento[]>([])
   const [filteredEventos, setFilteredEventos] = useState<Evento[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -126,6 +128,7 @@ export function EventosPage() {
         .insert({
           numero: numeroValue,
           descripcion: newEvento.descripcion.trim(),
+          usuario: user?.id,
           actualizado: new Date().toISOString()
         })
 
